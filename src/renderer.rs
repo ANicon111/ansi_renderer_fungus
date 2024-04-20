@@ -12,9 +12,9 @@ use crate::{
 
 pub struct Renderer {
     previous_buffer: Vec<Vec<Pixel>>,
-    width: i32,
-    height: i32,
-    padding: i32,
+    width: i64,
+    height: i64,
+    padding: i64,
     object: Option<RendererObject>,
     console: BufferedConsole,
 
@@ -46,7 +46,7 @@ impl Renderer {
         self.object.clone()
     }
 
-    pub fn set_padding(&mut self, buffer: i32) {
+    pub fn set_padding(&mut self, buffer: i64) {
         self.padding = buffer;
     }
 
@@ -54,7 +54,7 @@ impl Renderer {
         if let Some(object) = &mut self.object {
             {
                 let (terminal_width, terminal_height) = match terminal_size() {
-                    Some(val) => (val.0 .0 as i32, val.1 .0 as i32),
+                    Some(val) => (val.0 .0 as i64, val.1 .0 as i64),
                     None => (0, 0),
                 };
                 if self.width != terminal_width || self.height != terminal_height {
@@ -81,29 +81,29 @@ impl Renderer {
                 };
 
                 let style = object.get_style();
-                let alignment_offset_x: i32 = if let Some(style) = style.external_alignment_x {
+                let alignment_offset_x: i64 = if let Some(style) = style.external_alignment_x {
                     match style {
                         AlignmentX::Left => 0,
-                        AlignmentX::Center => self.width / 2 - object_width as i32 / 2,
-                        AlignmentX::Right => self.width - object_width as i32,
+                        AlignmentX::Center => self.width / 2 - object_width as i64 / 2,
+                        AlignmentX::Right => self.width - object_width as i64,
                     }
                 } else {
                     0
                 };
-                let alignment_offset_y: i32 = if let Some(style) = style.external_alignment_y {
+                let alignment_offset_y: i64 = if let Some(style) = style.external_alignment_y {
                     match style {
                         AlignmentY::Top => 0,
-                        AlignmentY::Center => self.height / 2 - object_height as i32 / 2,
-                        AlignmentY::Bottom => self.height - object_height as i32,
+                        AlignmentY::Center => self.height / 2 - object_height as i64 / 2,
+                        AlignmentY::Bottom => self.height - object_height as i64,
                     }
                 } else {
                     0
                 };
 
                 let start_x = alignment_offset_x.max(0);
-                let end_x = (alignment_offset_x + object_width as i32).min(self.width);
+                let end_x = (alignment_offset_x + object_width as i64).min(self.width);
                 let start_y = alignment_offset_y.max(0);
-                let end_y = (alignment_offset_y + object_height as i32).min(self.height);
+                let end_y = (alignment_offset_y + object_height as i64).min(self.height);
 
                 let mut last_i = -1;
                 for i in start_y..end_y {

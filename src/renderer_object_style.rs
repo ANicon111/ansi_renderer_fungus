@@ -21,8 +21,6 @@ pub struct RendererObjectStyle {
     pub internal_alignment_y: AlignmentY,
     pub external_alignment_x: Option<AlignmentX>,
     pub external_alignment_y: Option<AlignmentY>,
-    pub stack_children: bool,
-    pub stack_colors: bool,
 }
 
 impl RendererObjectStyle {
@@ -33,8 +31,31 @@ impl RendererObjectStyle {
             internal_alignment_y: AlignmentY::Top,
             external_alignment_x: None,
             external_alignment_y: None,
-            stack_children: false,
-            stack_colors: false,
         }
+    }
+
+    pub fn set_external_alignment(
+        &mut self,
+        external_alignment_x: Option<AlignmentX>,
+        external_alignment_y: Option<AlignmentY>,
+    ) -> &mut Self {
+        (self.external_alignment_x, self.external_alignment_y) =
+            (external_alignment_x, external_alignment_y);
+        self
+    }
+
+    pub fn set_internal_alignment(
+        &mut self,
+        internal_alignment_x: AlignmentX,
+        internal_alignment_y: AlignmentY,
+    ) -> &mut Self {
+        (self.internal_alignment_x, self.internal_alignment_y) =
+            (internal_alignment_x, internal_alignment_y);
+        self
+    }
+
+    pub fn set_border(&mut self, border: Border) -> &mut Self {
+        self.border = border;
+        self
     }
 }

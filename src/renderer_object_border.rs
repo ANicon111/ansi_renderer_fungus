@@ -1,5 +1,6 @@
 use crate::{
-    colors::{Color, Colors},
+    color::Color,
+    colors::Colors,
     pixel::{Pixel, Pixels},
 };
 

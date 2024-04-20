@@ -1,7 +1,9 @@
 use std::time::{Duration, Instant};
 
 use crate::{
-    colors::{Color, ColorArea, ColorLayer, Colors},
+    color::Color,
+    color_area::{ColorArea, ColorLayer},
+    colors::Colors,
     geometry::{Dimension, Dimensions},
     renderer::Renderer,
     renderer_object::RendererObject,
@@ -169,56 +171,38 @@ fn renderer_test() {
         style
     });
     boat_right.set_colors(vec![
-        ColorArea::with_geometry(
+        *ColorArea::new(
             Colors::SADDLE_BROWN.with_luminosity(0.15),
             ColorLayer::Foreground,
-            Dimensions::pixel(0, 0, 18, 9),
-        ),
-        ColorArea::with_geometry(
-            water_color,
-            ColorLayer::Foreground,
-            Dimensions::pixel(0, 8, 18, 1),
-        ),
-        ColorArea::with_geometry(
+        )
+        .set_geometry(Dimensions::pixel(0, 0, 18, 9)),
+        *ColorArea::new(water_color, ColorLayer::Foreground)
+            .set_geometry(Dimensions::pixel(0, 8, 18, 1)),
+        *ColorArea::new(
             Colors::SADDLE_BROWN.with_luminosity(0.2),
             ColorLayer::Foreground,
-            Dimensions::pixel(5, 1, 1, 6),
-        ),
-        ColorArea::with_geometry(
+        )
+        .set_geometry(Dimensions::pixel(5, 1, 1, 6)),
+        *ColorArea::new(
             Colors::SADDLE_BROWN.with_luminosity(0.2),
             ColorLayer::Foreground,
-            Dimensions::pixel(8, 0, 2, 7),
-        ),
-        ColorArea::with_geometry(
+        )
+        .set_geometry(Dimensions::pixel(8, 0, 2, 7)),
+        *ColorArea::new(
             Colors::SADDLE_BROWN.with_luminosity(0.2),
             ColorLayer::Foreground,
-            Dimensions::pixel(13, 2, 1, 5),
-        ),
-        ColorArea::with_geometry(
-            Color::from_rgb(140, 120, 100),
-            ColorLayer::Foreground,
-            Dimensions::pixel(5, 2, 1, 1),
-        ),
-        ColorArea::with_geometry(
-            Color::from_rgb(140, 120, 100),
-            ColorLayer::Foreground,
-            Dimensions::pixel(5, 4, 1, 2),
-        ),
-        ColorArea::with_geometry(
-            Color::from_rgb(140, 120, 100),
-            ColorLayer::Foreground,
-            Dimensions::pixel(9, 2, 3, 3),
-        ),
-        ColorArea::with_geometry(
-            Color::from_rgb(140, 120, 100),
-            ColorLayer::Foreground,
-            Dimensions::pixel(13, 3, 2, 3),
-        ),
-        ColorArea::with_geometry(
-            water_color,
-            ColorLayer::Foreground,
-            Dimensions::pixel(18, 7, 2, 1),
-        ),
+        )
+        .set_geometry(Dimensions::pixel(13, 2, 1, 5)),
+        *ColorArea::new(Color::from_rgb(140, 120, 100), ColorLayer::Foreground)
+            .set_geometry(Dimensions::pixel(5, 2, 1, 1)),
+        *ColorArea::new(Color::from_rgb(140, 120, 100), ColorLayer::Foreground)
+            .set_geometry(Dimensions::pixel(5, 4, 1, 2)),
+        *ColorArea::new(Color::from_rgb(140, 120, 100), ColorLayer::Foreground)
+            .set_geometry(Dimensions::pixel(9, 2, 3, 3)),
+        *ColorArea::new(Color::from_rgb(140, 120, 100), ColorLayer::Foreground)
+            .set_geometry(Dimensions::pixel(13, 3, 2, 3)),
+        *ColorArea::new(water_color, ColorLayer::Foreground)
+            .set_geometry(Dimensions::pixel(18, 7, 2, 1)),
     ]);
     boat_right.set_y(Dimension::Pixel(-2));
     boat_right.set_default_foreground_color(Colors::INVALID);
@@ -231,56 +215,38 @@ fn renderer_test() {
         style
     });
     boat_left.set_colors(vec![
-        ColorArea::with_geometry(
+        *ColorArea::new(
             Colors::SADDLE_BROWN.with_luminosity(0.15),
             ColorLayer::Foreground,
-            Dimensions::pixel(2, 0, 18, 9),
-        ),
-        ColorArea::with_geometry(
-            water_color,
-            ColorLayer::Foreground,
-            Dimensions::pixel(2, 8, 18, 1),
-        ),
-        ColorArea::with_geometry(
+        )
+        .set_geometry(Dimensions::pixel(2, 0, 18, 9)),
+        *ColorArea::new(water_color, ColorLayer::Foreground)
+            .set_geometry(Dimensions::pixel(2, 8, 18, 1)),
+        *ColorArea::new(
             Colors::SADDLE_BROWN.with_luminosity(0.20),
             ColorLayer::Foreground,
-            Dimensions::pixel(14, 1, 1, 6),
-        ),
-        ColorArea::with_geometry(
+        )
+        .set_geometry(Dimensions::pixel(14, 1, 1, 6)),
+        *ColorArea::new(
             Colors::SADDLE_BROWN.with_luminosity(0.20),
             ColorLayer::Foreground,
-            Dimensions::pixel(10, 0, 2, 7),
-        ),
-        ColorArea::with_geometry(
+        )
+        .set_geometry(Dimensions::pixel(10, 0, 2, 7)),
+        *ColorArea::new(
             Colors::SADDLE_BROWN.with_luminosity(0.20),
             ColorLayer::Foreground,
-            Dimensions::pixel(6, 2, 1, 5),
-        ),
-        ColorArea::with_geometry(
-            Color::from_rgb(140, 120, 100),
-            ColorLayer::Foreground,
-            Dimensions::pixel(14, 2, 1, 1),
-        ),
-        ColorArea::with_geometry(
-            Color::from_rgb(140, 120, 100),
-            ColorLayer::Foreground,
-            Dimensions::pixel(14, 4, 1, 2),
-        ),
-        ColorArea::with_geometry(
-            Color::from_rgb(140, 120, 100),
-            ColorLayer::Foreground,
-            Dimensions::pixel(9, 2, 3, 3),
-        ),
-        ColorArea::with_geometry(
-            Color::from_rgb(140, 120, 100),
-            ColorLayer::Foreground,
-            Dimensions::pixel(5, 3, 2, 3),
-        ),
-        ColorArea::with_geometry(
-            water_color,
-            ColorLayer::Foreground,
-            Dimensions::pixel(0, 7, 2, 1),
-        ),
+        )
+        .set_geometry(Dimensions::pixel(6, 2, 1, 5)),
+        *ColorArea::new(Color::from_rgb(140, 120, 100), ColorLayer::Foreground)
+            .set_geometry(Dimensions::pixel(14, 2, 1, 1)),
+        *ColorArea::new(Color::from_rgb(140, 120, 100), ColorLayer::Foreground)
+            .set_geometry(Dimensions::pixel(14, 4, 1, 2)),
+        *ColorArea::new(Color::from_rgb(140, 120, 100), ColorLayer::Foreground)
+            .set_geometry(Dimensions::pixel(9, 2, 3, 3)),
+        *ColorArea::new(Color::from_rgb(140, 120, 100), ColorLayer::Foreground)
+            .set_geometry(Dimensions::pixel(5, 3, 2, 3)),
+        *ColorArea::new(water_color, ColorLayer::Foreground)
+            .set_geometry(Dimensions::pixel(0, 7, 2, 1)),
     ]);
     boat_left.set_y(Dimension::Pixel(-2));
     boat_left.set_default_foreground_color(Colors::INVALID);
@@ -351,16 +317,10 @@ fn renderer_test() {
     });
     title.set_colors(vec![
         ColorArea::new(Colors::BLACK.with_alpha(0.5), ColorLayer::Background),
-        ColorArea::with_geometry(
-            Colors::SLATE_BLUE,
-            ColorLayer::Foreground,
-            Dimensions::pixel(8, 0, 9, 1),
-        ),
-        ColorArea::with_geometry(
-            Colors::DARK_GOLDENROD,
-            ColorLayer::Foreground,
-            Dimensions::pixel(-9, 0, 5, 1),
-        ),
+        *ColorArea::new(Colors::SLATE_BLUE, ColorLayer::Foreground)
+            .set_geometry(Dimensions::pixel(8, 0, 9, 1)),
+        *ColorArea::new(Colors::DARK_GOLDENROD, ColorLayer::Foreground)
+            .set_geometry(Dimensions::pixel(-9, 0, 5, 1)),
     ]);
     title.set_children(&vec![moon.clone()]);
 
@@ -377,66 +337,42 @@ fn renderer_test() {
         style
     });
     root.set_colors(vec![
-        ColorArea::with_geometry(
-            Colors::BLACK,
-            ColorLayer::Background,
-            (
-                Dimension::Auto,
-                Dimension::Auto,
-                Dimension::Auto,
-                Dimension::Auto,
-            ),
-        ),
-        ColorArea::with_geometry(
-            Colors::WHITE,
-            ColorLayer::Foreground,
-            (
-                Dimension::Auto,
-                Dimension::Auto,
-                Dimension::Auto,
-                Dimension::Auto,
-            ),
-        ),
-        ColorArea::with_geometry(
-            Colors::BLACK,
-            ColorLayer::Foreground,
-            (
-                Dimension::Pixel(0),
-                Dimension::Pixel(0),
-                Dimension::Auto,
-                Dimension::Pixel(1),
-            ),
-        ),
-        ColorArea::with_geometry(
-            Colors::BLACK.with_luminosity(0.3),
-            ColorLayer::Foreground,
-            (
-                Dimension::Pixel(0),
-                Dimension::Pixel(0),
-                Dimension::Auto,
-                Dimension::Pixel(3),
-            ),
-        ),
-        ColorArea::with_geometry(
-            water_color,
-            ColorLayer::Foreground,
-            (
-                Dimension::Pixel(0),
-                Dimension::Pixel(0),
-                Dimension::Auto,
-                Dimension::Pixel(4),
-            ),
-        ),
-        ColorArea::with_geometry(
-            water_color,
-            ColorLayer::Background,
-            (
-                Dimension::Pixel(0),
-                Dimension::Pixel(0),
-                Dimension::Auto,
-                Dimension::Pixel(3),
-            ),
-        ),
+        *ColorArea::new(Colors::BLACK, ColorLayer::Background).set_geometry((
+            Dimension::Auto,
+            Dimension::Auto,
+            Dimension::Auto,
+            Dimension::Auto,
+        )),
+        *ColorArea::new(Colors::WHITE, ColorLayer::Foreground).set_geometry((
+            Dimension::Auto,
+            Dimension::Auto,
+            Dimension::Auto,
+            Dimension::Auto,
+        )),
+        *ColorArea::new(Colors::BLACK, ColorLayer::Foreground).set_geometry((
+            Dimension::Pixel(0),
+            Dimension::Pixel(0),
+            Dimension::Auto,
+            Dimension::Pixel(1),
+        )),
+        *ColorArea::new(Colors::BLACK.with_luminosity(0.3), ColorLayer::Foreground).set_geometry((
+            Dimension::Pixel(0),
+            Dimension::Pixel(0),
+            Dimension::Auto,
+            Dimension::Pixel(3),
+        )),
+        *ColorArea::new(water_color, ColorLayer::Foreground).set_geometry((
+            Dimension::Pixel(0),
+            Dimension::Pixel(0),
+            Dimension::Auto,
+            Dimension::Pixel(4),
+        )),
+        *ColorArea::new(water_color, ColorLayer::Background).set_geometry((
+            Dimension::Pixel(0),
+            Dimension::Pixel(0),
+            Dimension::Auto,
+            Dimension::Pixel(3),
+        )),
     ]);
     root.set_children(&mut vec![
         boat_left.clone(),
@@ -449,11 +385,11 @@ fn renderer_test() {
     let mut frame_count = 0;
 
     let mut previous_frame_count = 0;
-    let mut min_frames_per_second = i32::MAX;
+    let mut min_frames_per_second = i64::MAX;
     let mut max_frames_per_second = 0;
 
     let mut previous_frame_count_fourth = 0;
-    let mut min_frames_per_fourth = i32::MAX;
+    let mut min_frames_per_fourth = i64::MAX;
     let mut max_frames_per_fourth = 0;
 
     let mut time_step = Instant::now();
@@ -464,7 +400,7 @@ fn renderer_test() {
             while Instant::now().duration_since(time_step) < Duration::from_millis(250) {
                 renderer.draw(false);
                 frame_count += 1;
-                moon.set_current_frame((frame_count % 200) as u64);
+                moon.set_current_frame(frame_count % 200);
                 boat_left.set_x(Dimension::PW(-(frame_count % 200) as f64 + 50.0));
                 boat_right.set_x(Dimension::PW((frame_count % 200) as f64 - 50.0));
                 waves.set_x(Dimension::PW(

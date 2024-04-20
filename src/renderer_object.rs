@@ -5,7 +5,9 @@ use std::{
 };
 
 use crate::{
-    colors::{Color, ColorArea, ColorLayer, Colors},
+    color::Color,
+    color_area::{ColorArea, ColorLayer},
+    colors::Colors,
     geometry::Dimension,
     pixel::Pixel,
     renderer_object_style::{AlignmentX, AlignmentY, RendererObjectStyle},
@@ -93,8 +95,8 @@ impl RendererObject {
         self.value.borrow().get_default_character()
     }
 
-    pub fn set_text(&mut self, val: &str) -> &mut Self {
-        self.value.borrow_mut().set_text(val);
+    pub fn set_text(&mut self, text: &str) -> &mut Self {
+        self.value.borrow_mut().set_text(text);
         self
     }
 
@@ -102,8 +104,8 @@ impl RendererObject {
         self.value.borrow().get_text()
     }
 
-    pub fn set_pattern(&mut self, val: &str) -> &mut Self {
-        self.value.borrow_mut().set_pattern(val);
+    pub fn set_pattern(&mut self, pattern: &str) -> &mut Self {
+        self.value.borrow_mut().set_pattern(pattern);
         self
     }
 
@@ -111,8 +113,8 @@ impl RendererObject {
         self.value.borrow().get_pattern()
     }
 
-    pub fn set_animation(&mut self, val: &Vec<&str>) -> &mut Self {
-        self.value.borrow_mut().set_animation(val);
+    pub fn set_animation(&mut self, animation: &Vec<&str>) -> &mut Self {
+        self.value.borrow_mut().set_animation(animation);
         self
     }
 
@@ -120,12 +122,17 @@ impl RendererObject {
         self.value.borrow().get_animation()
     }
 
-    pub fn set_current_frame(&mut self, val: u64) -> &mut Self {
-        self.value.borrow_mut().set_current_frame(val);
+    pub fn set_current_frame(&mut self, frame: i64) -> &mut Self {
+        self.value.borrow_mut().set_current_frame(frame);
         self
     }
 
-    pub fn get_current_frame(&self) -> u64 {
+    pub fn shift_current_frame(&mut self, shift_val: i64) -> &mut Self {
+        self.value.borrow_mut().shift_current_frame(shift_val);
+        self
+    }
+
+    pub fn get_current_frame(&self) -> i64 {
         self.value.borrow().get_current_frame()
     }
 
@@ -138,8 +145,8 @@ impl RendererObject {
         self.value.borrow().get_style()
     }
 
-    pub fn set_colors(&mut self, val: Vec<ColorArea>) -> &mut Self {
-        self.value.borrow_mut().set_colors(val);
+    pub fn set_colors(&mut self, colors: Vec<ColorArea>) -> &mut Self {
+        self.value.borrow_mut().set_colors(colors);
         self
     }
 
@@ -147,23 +154,25 @@ impl RendererObject {
         self.value.borrow().get_colors()
     }
 
-    pub fn add_color(&mut self, val: &mut ColorArea) {
-        self.value.borrow_mut().add_color(val);
+    pub fn add_color(&mut self, color: &mut ColorArea) -> &mut Self {
+        self.value.borrow_mut().add_color(color);
+        self
     }
 
-    pub fn remove_color(&mut self, val: &ColorArea) {
-        self.value.borrow_mut().remove_color(val);
+    pub fn remove_color(&mut self, color: &ColorArea) -> &mut Self {
+        self.value.borrow_mut().remove_color(color);
+        self
     }
 
     pub fn get_buffer(
         &mut self,
-        renderer_width: i32,
-        renderer_height: i32,
-        parent_width: i32,
-        parent_height: i32,
-        absolute_x: i32,
-        absolute_y: i32,
-        renderer_padding: i32,
+        renderer_width: i64,
+        renderer_height: i64,
+        parent_width: i64,
+        parent_height: i64,
+        absolute_x: i64,
+        absolute_y: i64,
+        renderer_padding: i64,
     ) -> Vec<Vec<Pixel>> {
         self.value.borrow_mut().process_geometry(
             renderer_width,
@@ -267,17 +276,17 @@ pub struct RendererObjectValue {
     width: Dimension,
     height: Dimension,
 
-    absolute_x: i32,
-    absolute_y: i32,
+    absolute_x: i64,
+    absolute_y: i64,
 
-    parent_width: i32,
-    parent_height: i32,
+    parent_width: i64,
+    parent_height: i64,
 
-    renderer_width: i32,
-    renderer_height: i32,
+    renderer_width: i64,
+    renderer_height: i64,
 
-    calculated_width: i32,
-    calculated_height: i32,
+    calculated_width: i64,
+    calculated_height: i64,
 
     update_size: bool,
     update_content: bool,
@@ -289,7 +298,7 @@ pub struct RendererObjectValue {
     pattern: Vec<Vec<char>>,
 
     animation: Vec<Vec<Vec<char>>>,
-    current_animation_frame: u64,
+    current_animation_frame: i64,
 
     colors: Vec<ColorArea>,
     default_background_color: Color,
@@ -462,14 +471,21 @@ impl RendererObjectValue {
             .collect()
     }
 
-    pub fn set_current_frame(&mut self, current_animation_frame: u64) {
+    pub fn set_current_frame(&mut self, current_animation_frame: i64) {
         if self.current_animation_frame != current_animation_frame {
-            self.current_animation_frame = current_animation_frame.clone();
+            self.current_animation_frame = current_animation_frame;
             self.update();
         }
     }
 
-    pub fn get_current_frame(&self) -> u64 {
+    pub fn shift_current_frame(&mut self, shift_val: i64) {
+        if shift_val != 0 {
+            self.current_animation_frame += shift_val;
+            self.update();
+        }
+    }
+
+    pub fn get_current_frame(&self) -> i64 {
         self.current_animation_frame
     }
 
@@ -508,12 +524,12 @@ impl RendererObjectValue {
 
     fn generic_dimension_calc(
         dim: &Dimension,
-        parent_width: i32,
-        parent_height: i32,
-        renderer_width: i32,
-        renderer_height: i32,
+        parent_width: i64,
+        parent_height: i64,
+        renderer_width: i64,
+        renderer_height: i64,
         horizontal: bool,
-    ) -> i32 {
+    ) -> i64 {
         match dim {
             Dimension::Auto => 0,
             Dimension::Pixel(val) => *val,
@@ -524,33 +540,33 @@ impl RendererObjectValue {
             } as f64
                 * val
                 * 0.01)
-                .round() as i32,
-            Dimension::PW(val) => (parent_width as f64 * val * 0.01).round() as i32,
-            Dimension::PH(val) => (parent_height as f64 * val * 0.01).round() as i32,
+                .round() as i64,
+            Dimension::PW(val) => (parent_width as f64 * val * 0.01).round() as i64,
+            Dimension::PH(val) => (parent_height as f64 * val * 0.01).round() as i64,
             Dimension::PMin(val) => {
-                (parent_width.min(parent_height) as f64 * val * 0.01).round() as i32
+                (parent_width.min(parent_height) as f64 * val * 0.01).round() as i64
             }
             Dimension::PMax(val) => {
-                (parent_width.max(parent_height) as f64 * val * 0.01).round() as i32
+                (parent_width.max(parent_height) as f64 * val * 0.01).round() as i64
             }
-            Dimension::VW(val) => (renderer_width as f64 * val * 0.01).round() as i32,
-            Dimension::VH(val) => (renderer_height as f64 * val * 0.01).round() as i32,
+            Dimension::VW(val) => (renderer_width as f64 * val * 0.01).round() as i64,
+            Dimension::VH(val) => (renderer_height as f64 * val * 0.01).round() as i64,
             Dimension::VMin(val) => {
-                (renderer_width.min(renderer_height) as f64 * val * 0.01).round() as i32
+                (renderer_width.min(renderer_height) as f64 * val * 0.01).round() as i64
             }
             Dimension::VMax(val) => {
-                (renderer_width.max(renderer_height) as f64 * val * 0.01).round() as i32
+                (renderer_width.max(renderer_height) as f64 * val * 0.01).round() as i64
             }
         }
     }
 
     fn calculate_geometry(
         &self,
-        parent_width: i32,
-        parent_height: i32,
-        renderer_width: i32,
-        renderer_height: i32,
-    ) -> (i32, i32) {
+        parent_width: i64,
+        parent_height: i64,
+        renderer_width: i64,
+        renderer_height: i64,
+    ) -> (i64, i64) {
         let mut width = Self::generic_dimension_calc(
             &self.width,
             parent_width,
@@ -595,11 +611,11 @@ impl RendererObjectValue {
                 }
             }
             for line in &self.text {
-                width = width.max(line.len() as i32);
+                width = width.max(line.len() as i64);
             }
             for frame in &self.animation {
                 for line in frame {
-                    width = width.max(line.len() as i32);
+                    width = width.max(line.len() as i64);
                 }
             }
         }
@@ -647,43 +663,43 @@ impl RendererObjectValue {
                     _ => (),
                 }
             }
-            height = height.max(self.text.len() as i32);
+            height = height.max(self.text.len() as i64);
             for frame in &self.animation {
-                height = height.max(frame.len() as i32);
+                height = height.max(frame.len() as i64);
             }
         }
 
         (width, height)
     }
 
-    fn draw_text(&mut self, renderer_padding: i32) {
-        let start_x: i32 = (-self.absolute_x - renderer_padding).max(0);
-        let end_x: i32 = (self.absolute_x + renderer_padding + self.renderer_width)
+    fn draw_text(&mut self, renderer_padding: i64) {
+        let start_x: i64 = (-self.absolute_x - renderer_padding).max(0);
+        let end_x: i64 = (self.absolute_x + renderer_padding + self.renderer_width)
             .min(self.calculated_width)
             .max(0);
-        let start_y: i32 = (-self.absolute_y - renderer_padding).max(0);
-        let end_y: i32 = (self.absolute_y + renderer_padding + self.renderer_height)
+        let start_y: i64 = (-self.absolute_y - renderer_padding).max(0);
+        let end_y: i64 = (self.absolute_y + renderer_padding + self.renderer_height)
             .min(self.calculated_height)
             .max(0);
 
         let text_height: usize = self.text.len();
-        let alignment_offset_y: i32 = match self.style.internal_alignment_y {
+        let alignment_offset_y: i64 = match self.style.internal_alignment_y {
             AlignmentY::Top => 0,
-            AlignmentY::Center => self.calculated_height / 2 - text_height as i32 / 2,
-            AlignmentY::Bottom => self.calculated_height - text_height as i32,
+            AlignmentY::Center => self.calculated_height / 2 - text_height as i64 / 2,
+            AlignmentY::Bottom => self.calculated_height - text_height as i64,
         };
         let text_start_y = start_y.max(alignment_offset_y);
-        let text_end_y = end_y.min(alignment_offset_y + text_height as i32);
+        let text_end_y = end_y.min(alignment_offset_y + text_height as i64);
 
         for i in text_start_y..text_end_y {
             let line_width: usize = self.text[(i - alignment_offset_y) as usize].len();
-            let alignment_offset_x: i32 = match self.style.internal_alignment_x {
+            let alignment_offset_x: i64 = match self.style.internal_alignment_x {
                 AlignmentX::Left => 0,
-                AlignmentX::Center => self.calculated_width / 2 - line_width as i32 / 2,
-                AlignmentX::Right => self.calculated_width - line_width as i32,
+                AlignmentX::Center => self.calculated_width / 2 - line_width as i64 / 2,
+                AlignmentX::Right => self.calculated_width - line_width as i64,
             };
             let line_start_x = start_x.max(alignment_offset_x);
-            let line_end_x = end_x.min(alignment_offset_x + line_width as i32);
+            let line_end_x = end_x.min(alignment_offset_x + line_width as i64);
             for j in line_start_x..line_end_x {
                 let new_val =
                     self.text[(i - alignment_offset_y) as usize][(j - alignment_offset_x) as usize];
@@ -694,13 +710,13 @@ impl RendererObjectValue {
         }
     }
 
-    fn draw_pattern(&mut self, renderer_padding: i32) {
-        let start_x: i32 = (-self.absolute_x - renderer_padding).max(0);
-        let end_x: i32 = (-self.absolute_x + renderer_padding + self.renderer_width)
+    fn draw_pattern(&mut self, renderer_padding: i64) {
+        let start_x: i64 = (-self.absolute_x - renderer_padding).max(0);
+        let end_x: i64 = (-self.absolute_x + renderer_padding + self.renderer_width)
             .min(self.calculated_width)
             .max(0);
-        let start_y: i32 = (-self.absolute_y - renderer_padding).max(0);
-        let end_y: i32 = (-self.absolute_y + renderer_padding + self.renderer_height)
+        let start_y: i64 = (-self.absolute_y - renderer_padding).max(0);
+        let end_y: i64 = (-self.absolute_y + renderer_padding + self.renderer_height)
             .min(self.calculated_height)
             .max(0);
 
@@ -717,51 +733,50 @@ impl RendererObjectValue {
         }
     }
 
-    fn draw_animation(&mut self, renderer_padding: i32, current_animation_frame: u64) {
-        let start_x: i32 = (-self.absolute_x - renderer_padding).max(0);
-        let end_x: i32 = (-self.absolute_x + renderer_padding + self.renderer_width)
+    fn draw_animation(&mut self, renderer_padding: i64, current_animation_frame: i64) {
+        let start_x: i64 = (-self.absolute_x - renderer_padding).max(0);
+        let end_x: i64 = (-self.absolute_x + renderer_padding + self.renderer_width)
             .min(self.calculated_width)
             .max(0);
-        let start_y: i32 = (-self.absolute_y - renderer_padding).max(0);
-        let end_y: i32 = (-self.absolute_y + renderer_padding + self.renderer_height)
+        let start_y: i64 = (-self.absolute_y - renderer_padding).max(0);
+        let end_y: i64 = (-self.absolute_y + renderer_padding + self.renderer_height)
             .min(self.calculated_height)
             .max(0);
 
-        let frame =
-            &self.animation[(current_animation_frame % self.animation.len() as u64) as usize];
+        let frame = &self.animation[current_animation_frame as usize % self.animation.len()];
 
         let frame_height: usize = frame.len();
-        let alignment_offset_y: i32 = match self.style.internal_alignment_y {
+        let alignment_offset_y: i64 = match self.style.internal_alignment_y {
             AlignmentY::Top => 0,
-            AlignmentY::Center => self.calculated_height / 2 - frame_height as i32 / 2,
-            AlignmentY::Bottom => self.calculated_height - frame_height as i32,
+            AlignmentY::Center => self.calculated_height / 2 - frame_height as i64 / 2,
+            AlignmentY::Bottom => self.calculated_height - frame_height as i64,
         };
         let frame_start_y = start_y.max(alignment_offset_y) as usize;
-        let frame_end_y = end_y.min(alignment_offset_y + frame_height as i32) as usize;
+        let frame_end_y = end_y.min(alignment_offset_y + frame_height as i64) as usize;
 
         for j in frame_start_y..frame_end_y as usize {
             let line_width: usize = frame[j - alignment_offset_y as usize].len();
-            let alignment_offset_x: i32 = match self.style.internal_alignment_x {
+            let alignment_offset_x: i64 = match self.style.internal_alignment_x {
                 AlignmentX::Left => 0,
-                AlignmentX::Center => self.calculated_width / 2 - line_width as i32 / 2,
-                AlignmentX::Right => self.calculated_width - line_width as i32,
+                AlignmentX::Center => self.calculated_width / 2 - line_width as i64 / 2,
+                AlignmentX::Right => self.calculated_width - line_width as i64,
             };
             let line_start_x = start_x.max(alignment_offset_x) as usize;
-            let line_end_x = end_x.min(alignment_offset_x + line_width as i32) as usize;
+            let line_end_x = end_x.min(alignment_offset_x + line_width as i64) as usize;
             for i in line_start_x..line_end_x {
-                self.buffer[j][i].value = frame[(j as i32 - alignment_offset_y) as usize]
-                    [(i as i32 - alignment_offset_x) as usize];
+                self.buffer[j][i].value = frame[(j as i64 - alignment_offset_y) as usize]
+                    [(i as i64 - alignment_offset_x) as usize];
             }
         }
     }
 
-    fn draw_colors(&mut self, renderer_padding: i32) {
-        let start_x: i32 = (-self.absolute_x - renderer_padding).max(0);
-        let end_x: i32 = (-self.absolute_x + renderer_padding + self.renderer_width)
+    fn draw_colors(&mut self, renderer_padding: i64) {
+        let start_x: i64 = (-self.absolute_x - renderer_padding).max(0);
+        let end_x: i64 = (-self.absolute_x + renderer_padding + self.renderer_width)
             .min(self.calculated_width)
             .max(0);
-        let start_y: i32 = (-self.absolute_y - renderer_padding).max(0);
-        let end_y: i32 = (-self.absolute_y + renderer_padding + self.renderer_height)
+        let start_y: i64 = (-self.absolute_y - renderer_padding).max(0);
+        let end_y: i64 = (-self.absolute_y + renderer_padding + self.renderer_height)
             .min(self.calculated_height)
             .max(0);
 
@@ -808,22 +823,22 @@ impl RendererObjectValue {
                 color_height = self.calculated_height;
             }
 
-            let alignment_offset_x: i32 = match match color_area.external_alignment_x {
+            let alignment_offset_x: i64 = match match color_area.external_alignment_x {
                 Some(val) => val,
                 None => self.style.internal_alignment_x,
             } {
                 AlignmentX::Left => 0,
-                AlignmentX::Center => self.calculated_width / 2 - color_width as i32 / 2,
-                AlignmentX::Right => self.calculated_width - color_width as i32,
+                AlignmentX::Center => self.calculated_width / 2 - color_width as i64 / 2,
+                AlignmentX::Right => self.calculated_width - color_width as i64,
             };
 
-            let alignment_offset_y: i32 = match match color_area.external_alignment_y {
+            let alignment_offset_y: i64 = match match color_area.external_alignment_y {
                 Some(val) => val,
                 None => self.style.internal_alignment_y,
             } {
                 AlignmentY::Top => 0,
-                AlignmentY::Center => self.calculated_height / 2 - color_height as i32 / 2,
-                AlignmentY::Bottom => self.calculated_height - color_height as i32,
+                AlignmentY::Center => self.calculated_height / 2 - color_height as i64 / 2,
+                AlignmentY::Bottom => self.calculated_height - color_height as i64,
             };
 
             let color_start_x = start_x.max(alignment_offset_x + color_x);
@@ -852,13 +867,13 @@ impl RendererObjectValue {
         }
     }
 
-    fn draw_children(&mut self, renderer_padding: i32) {
-        let start_x: i32 = (-self.absolute_x - renderer_padding).max(0);
-        let end_x: i32 = (-self.absolute_x + renderer_padding + self.renderer_width)
+    fn draw_children(&mut self, renderer_padding: i64) {
+        let start_x: i64 = (-self.absolute_x - renderer_padding).max(0);
+        let end_x: i64 = (-self.absolute_x + renderer_padding + self.renderer_width)
             .min(self.calculated_width)
             .max(0);
-        let start_y: i32 = (-self.absolute_y - renderer_padding).max(0);
-        let end_y: i32 = (-self.absolute_y + renderer_padding + self.renderer_height)
+        let start_y: i64 = (-self.absolute_y - renderer_padding).max(0);
+        let end_y: i64 = (-self.absolute_y + renderer_padding + self.renderer_height)
             .min(self.calculated_height)
             .max(0);
 
@@ -885,22 +900,22 @@ impl RendererObjectValue {
             let child_height = child.calculated_height;
 
             //use precalculated child
-            let alignment_offset_x: i32 = match match child.style.external_alignment_x {
+            let alignment_offset_x: i64 = match match child.style.external_alignment_x {
                 Some(val) => val,
                 None => self.style.internal_alignment_x,
             } {
                 AlignmentX::Left => 0,
-                AlignmentX::Center => self.calculated_width / 2 - child_width as i32 / 2,
-                AlignmentX::Right => self.calculated_width - child_width as i32,
+                AlignmentX::Center => self.calculated_width / 2 - child_width as i64 / 2,
+                AlignmentX::Right => self.calculated_width - child_width as i64,
             };
 
-            let alignment_offset_y: i32 = match match child.style.external_alignment_y {
+            let alignment_offset_y: i64 = match match child.style.external_alignment_y {
                 Some(val) => val,
                 None => self.style.internal_alignment_y,
             } {
                 AlignmentY::Top => 0, //IDK why, but child positioning is whack if this ain't 1
-                AlignmentY::Center => self.calculated_height / 2 - child_height as i32 / 2,
-                AlignmentY::Bottom => self.calculated_height - child_height as i32,
+                AlignmentY::Center => self.calculated_height / 2 - child_height as i64 / 2,
+                AlignmentY::Bottom => self.calculated_height - child_height as i64,
             };
 
             let child_buffer = child.get_buffer(
@@ -1023,10 +1038,10 @@ impl RendererObjectValue {
 
     pub fn process_geometry(
         &mut self,
-        renderer_width: i32,
-        renderer_height: i32,
-        parent_width: i32,
-        parent_height: i32,
+        renderer_width: i64,
+        renderer_height: i64,
+        parent_width: i64,
+        parent_height: i64,
     ) {
         if renderer_width != self.renderer_width {
             self.renderer_width = renderer_width;
@@ -1206,9 +1221,9 @@ impl RendererObjectValue {
 
     pub fn get_buffer(
         &mut self,
-        absolute_x: i32,
-        absolute_y: i32,
-        renderer_padding: i32,
+        absolute_x: i64,
+        absolute_y: i64,
+        renderer_padding: i64,
     ) -> &Vec<Vec<Pixel>> {
         if (absolute_x - self.absolute_x).abs() >= renderer_padding {
             self.absolute_x = absolute_x;

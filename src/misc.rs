@@ -5,7 +5,7 @@ use crate::{
     pixel::{Pixel, Pixels},
 };
 
-pub fn process_percent(mut percent_double: &str) -> Result<f32, &str> {
+pub fn process_percent(mut percent_double: &str) -> Result<f64, &str> {
     percent_double = percent_double.trim();
     let alpha_mod = if percent_double.ends_with('%') {
         percent_double = percent_double[0..percent_double.len() - 1].trim();
@@ -13,7 +13,7 @@ pub fn process_percent(mut percent_double: &str) -> Result<f32, &str> {
     } else {
         1.0
     };
-    match percent_double.parse::<f32>() {
+    match percent_double.parse::<f64>() {
         Ok(val) => Ok(val * alpha_mod),
         Err(_) => Err("Couldn't parse percent"),
     }
@@ -70,7 +70,7 @@ impl BufferedConsole {
         }
     }
 
-    pub fn set_cursor_position(&mut self, x: i32, y: i32) {
+    pub fn set_cursor_position(&mut self, x: i64, y: i64) {
         for c in format!("\x1B[{};{}H", y + 1, x + 1).as_bytes() {
             self.buffer.push(*c);
         }

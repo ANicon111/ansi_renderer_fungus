@@ -10,10 +10,10 @@ impl Dimensions {
         )
     }
     pub fn pixel(
-        x: i32,
-        y: i32,
-        width: i32,
-        height: i32,
+        x: i64,
+        y: i64,
+        width: i64,
+        height: i64,
     ) -> (Dimension, Dimension, Dimension, Dimension) {
         (
             Dimension::Pixel(x),
@@ -144,7 +144,7 @@ impl Dimensions {
 #[derive(PartialEq, Debug, Clone, Copy)]
 pub enum Dimension {
     Auto,
-    Pixel(i32),
+    Pixel(i64),
     Percent(f64),
     PW(f64),
     PH(f64),
@@ -165,7 +165,7 @@ impl Dimension {
             _ if lowercase_html == "auto" => Ok(Dimension::Auto),
             _ if lowercase_html.ends_with("px") => match lowercase_html[..lowercase_html.len() - 2]
                 .trim()
-                .parse::<i32>()
+                .parse::<i64>()
             {
                 Ok(val) => Ok(Self::Pixel(val)),
                 Err(_) => Err("Couldn't parse pixel dimension"),
@@ -257,7 +257,7 @@ impl Dimension {
                     Err(_) => Err("Couldn't parse parent maximum dimension"),
                 }
             }
-            _ => match lowercase_html.parse::<i32>() {
+            _ => match lowercase_html.parse::<i64>() {
                 Ok(val) => Ok(Self::Pixel(val)),
                 Err(_) => Err("Couldn't parse pixel value"),
             },

@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::colors::{Color, Colors};
+use crate::{color::Color, colors::Colors};
 
 pub struct Pixels;
 
