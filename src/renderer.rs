@@ -1,13 +1,16 @@
-use std::vec;
+use std::{
+    io::{self, Write},
+    vec,
+};
 
 use terminal_size::terminal_size;
 
 use crate::{
     colors::Colors,
-    misc::BufferedConsole,
+    misc::{generic_dimension_calc, BufferedConsole},
     pixel::Pixel,
-    renderer_object::RendererObject,
     renderer_object_style::{AlignmentX, AlignmentY},
+    renderer_object_wrapper::RendererObject,
 };
 
 pub struct Renderer {
@@ -32,6 +35,18 @@ impl Renderer {
             console: BufferedConsole::new(),
             disable_output: false,
         }
+    }
+
+    pub fn hide_cursor(&self) {
+        let mut stdout = io::stdout().lock();
+        stdout.write_all(b"\x1b[?25l").unwrap();
+        stdout.flush().unwrap();
+    }
+
+    pub fn show_cursor(&self) {
+        let mut stdout = io::stdout().lock();
+        stdout.write_all(b"\x1b[?25h").unwrap();
+        stdout.flush().unwrap();
     }
 
     pub fn set_object(&mut self, renderer_object: Option<&RendererObject>) {
@@ -73,10 +88,32 @@ impl Renderer {
                     );
                 }
 
-                object.process_geometry(self.width, self.height, 0, 0, self.padding);
+                object.process_geometry(
+                    self.width,
+                    self.height,
+                    self.width,
+                    self.height,
+                    self.padding,
+                );
 
-                let object_height = object.get_calculated_height();
+                let object_x = generic_dimension_calc(
+                    &object.get_x(),
+                    self.width,
+                    self.height,
+                    self.width,
+                    self.height,
+                    true,
+                );
+                let object_y = generic_dimension_calc(
+                    &object.get_y(),
+                    self.width,
+                    self.height,
+                    self.width,
+                    self.height,
+                    false,
+                );
                 let object_width = object.get_calculated_width();
+                let object_height = object.get_calculated_height();
 
                 let style = object.get_style();
                 let alignment_offset_x: i64 = if let Some(style) = style.external_alignment_x {
@@ -100,12 +137,12 @@ impl Renderer {
                 let current_buffer =
                     object.get_buffer(alignment_offset_x, alignment_offset_y, self.padding);
 
-                let start_x = alignment_offset_x.max(0).min(self.width);
-                let end_x = (alignment_offset_x + object_width as i64)
+                let start_x = (alignment_offset_x + object_x).max(0).min(self.width);
+                let end_x = (alignment_offset_x + object_x + object_width as i64)
                     .max(0)
                     .min(self.width);
-                let start_y = alignment_offset_y.max(0).min(self.height);
-                let end_y = (alignment_offset_y + object_height as i64)
+                let start_y = (alignment_offset_y + object_y).max(0).min(self.height);
+                let end_y = (alignment_offset_y + object_y + object_height as i64)
                     .max(0)
                     .min(self.height);
 

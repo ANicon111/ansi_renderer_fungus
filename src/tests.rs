@@ -14,9 +14,9 @@ mod tests {
         colors::Colors,
         geometry::{Dimension, Dimensions},
         renderer::Renderer,
-        renderer_object::RendererObject,
         renderer_object_border::Borders,
         renderer_object_style::{AlignmentX, AlignmentY, RendererObjectStyle},
+        renderer_object_wrapper::RendererObject,
     };
 
     /* spellchecker: disable */
@@ -317,12 +317,11 @@ mod tests {
         );
         title.set_style({
             let mut style = RendererObjectStyle::new();
-            style.external_alignment_x = Some(AlignmentX::Center);
-            style.external_alignment_y = Some(AlignmentY::Center);
-            style.internal_alignment_x = AlignmentX::Center;
-            style.internal_alignment_y = AlignmentY::Center;
+            style
+                .set_external_alignment(Some(AlignmentX::Center), Some(AlignmentY::Center))
+                .set_internal_alignment(AlignmentX::Center, AlignmentY::Center);
             let mut border = Borders::ROUNDED;
-            border.set_background(Colors::BLACK.with_alpha(0.5));
+            border.set_background_all(Colors::BLACK.with_alpha(0.5));
             style.border = border;
             style
         });

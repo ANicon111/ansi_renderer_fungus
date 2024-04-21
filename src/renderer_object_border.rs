@@ -158,61 +158,83 @@ pub struct Border {
 }
 
 impl Border {
-    pub fn new(
-        tl: char,
-        t: char,
-        tr: char,
-        r: char,
-        br: char,
-        b: char,
-        bl: char,
-        l: char,
+    pub fn from_pixels(
+        top_left: Pixel,
+        top: Pixel,
+        top_right: Pixel,
+        right: Pixel,
+        bottom_right: Pixel,
+        bottom: Pixel,
+        bottom_left: Pixel,
+        left: Pixel,
+    ) -> Border {
+        Border {
+            top_left,
+            top,
+            top_right,
+            right,
+            bottom_right,
+            bottom,
+            bottom_left,
+            left,
+        }
+    }
+
+    pub fn from_chars(
+        top_left: char,
+        top: char,
+        top_right: char,
+        right: char,
+        bottom_right: char,
+        bottom: char,
+        bottom_left: char,
+        left: char,
     ) -> Border {
         Border {
             top_left: Pixel {
-                value: tl,
+                value: top_left,
                 background: Colors::TRANSPARENT,
                 foreground: Colors::WHITE,
             },
             top: Pixel {
-                value: t,
+                value: top,
                 background: Colors::TRANSPARENT,
                 foreground: Colors::WHITE,
             },
             top_right: Pixel {
-                value: tr,
+                value: top_right,
                 background: Colors::TRANSPARENT,
                 foreground: Colors::WHITE,
             },
             right: Pixel {
-                value: r,
+                value: right,
                 background: Colors::TRANSPARENT,
                 foreground: Colors::WHITE,
             },
             bottom_right: Pixel {
-                value: br,
+                value: bottom_right,
                 background: Colors::TRANSPARENT,
                 foreground: Colors::WHITE,
             },
             bottom: Pixel {
-                value: b,
+                value: bottom,
                 background: Colors::TRANSPARENT,
                 foreground: Colors::WHITE,
             },
             bottom_left: Pixel {
-                value: bl,
+                value: bottom_left,
                 background: Colors::TRANSPARENT,
                 foreground: Colors::WHITE,
             },
             left: Pixel {
-                value: l,
+                value: left,
                 background: Colors::TRANSPARENT,
                 foreground: Colors::WHITE,
             },
         }
     }
 
-    pub fn set_background(&mut self, color: Color) {
+    pub fn set_background_all(&mut self, color: Color) -> &mut Self {
         self.top_left.background = color;
         self.top.background = color;
         self.top_right.background = color;
@@ -221,9 +243,10 @@ impl Border {
         self.bottom.background = color;
         self.bottom_left.background = color;
         self.left.background = color;
+        self
     }
 
-    pub fn set_foreground(&mut self, color: Color) {
+    pub fn set_foreground_all(&mut self, color: Color) -> &mut Self {
         self.top_left.foreground = color;
         self.top.foreground = color;
         self.top_right.foreground = color;
@@ -232,5 +255,6 @@ impl Border {
         self.bottom.foreground = color;
         self.bottom_left.foreground = color;
         self.left.foreground = color;
+        self
     }
 }

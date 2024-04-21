@@ -36,21 +36,15 @@ impl RendererObjectStyle {
 
     pub fn set_external_alignment(
         &mut self,
-        external_alignment_x: Option<AlignmentX>,
-        external_alignment_y: Option<AlignmentY>,
+        x: Option<AlignmentX>,
+        y: Option<AlignmentY>,
     ) -> &mut Self {
-        (self.external_alignment_x, self.external_alignment_y) =
-            (external_alignment_x, external_alignment_y);
+        (self.external_alignment_x, self.external_alignment_y) = (x, y);
         self
     }
 
-    pub fn set_internal_alignment(
-        &mut self,
-        internal_alignment_x: AlignmentX,
-        internal_alignment_y: AlignmentY,
-    ) -> &mut Self {
-        (self.internal_alignment_x, self.internal_alignment_y) =
-            (internal_alignment_x, internal_alignment_y);
+    pub fn set_internal_alignment(&mut self, x: AlignmentX, y: AlignmentY) -> &mut Self {
+        (self.internal_alignment_x, self.internal_alignment_y) = (x, y);
         self
     }
 

@@ -7,351 +7,80 @@ use std::{
 use crate::{
     color::Color,
     color_area::{ColorArea, ColorLayer},
-    colors::Colors,
     geometry::Dimension,
+    misc::generic_dimension_calc,
     pixel::Pixel,
     renderer_object_style::{AlignmentX, AlignmentY, RendererObjectStyle},
 };
+pub(crate) struct RendererObjectValue {
+    pub(crate) buffer: Vec<Vec<Pixel>>,
 
-#[derive(Clone)]
-pub struct RendererObject {
-    value: Rc<RefCell<RendererObjectValue>>,
-}
+    pub(crate) x: Dimension,
+    pub(crate) y: Dimension,
+    pub(crate) width: Dimension,
+    pub(crate) height: Dimension,
 
-impl RendererObject {
-    //getters and setters
-    pub fn set_x(&mut self, x: Dimension) -> &mut Self {
-        self.value.borrow_mut().set_x(x);
-        self
-    }
+    pub(crate) absolute_x: i64,
+    pub(crate) absolute_y: i64,
 
-    pub fn get_x(&self) -> Dimension {
-        self.value.borrow().get_x()
-    }
+    pub(crate) parent_width: i64,
+    pub(crate) parent_height: i64,
 
-    pub fn set_y(&mut self, y: Dimension) -> &mut Self {
-        self.value.borrow_mut().set_y(y);
-        self
-    }
+    pub(crate) renderer_width: i64,
+    pub(crate) renderer_height: i64,
 
-    pub fn get_y(&self) -> Dimension {
-        self.value.borrow().get_y()
-    }
+    pub(crate) calculated_width: i64,
+    pub(crate) calculated_height: i64,
 
-    pub fn set_width(&mut self, width: Dimension) -> &mut Self {
-        self.value.borrow_mut().set_width(width);
-        self
-    }
+    pub(crate) update_size: bool,
+    pub(crate) update_content: bool,
 
-    pub fn get_width(&self) -> Dimension {
-        self.value.borrow().get_width()
-    }
+    pub(crate) default_character: char,
 
-    pub fn get_calculated_width(&self) -> i64 {
-        self.value.borrow().calculated_width
-    }
+    pub(crate) text: Vec<Vec<char>>,
 
-    pub fn set_height(&mut self, height: Dimension) -> &mut Self {
-        self.value.borrow_mut().set_height(height);
-        self
-    }
+    pub(crate) pattern: Vec<Vec<char>>,
 
-    pub fn get_height(&self) -> Dimension {
-        self.value.borrow().get_height()
-    }
+    pub(crate) animation: Vec<Vec<Vec<char>>>,
+    pub(crate) current_animation_frame: i64,
 
-    pub fn get_calculated_height(&self) -> i64 {
-        self.value.borrow().calculated_height
-    }
+    pub(crate) colors: Vec<ColorArea>,
+    pub(crate) default_background_color: Color,
+    pub(crate) default_foreground_color: Color,
 
-    pub fn set_geometry(
-        &mut self,
-        (x, y, width, height): (Dimension, Dimension, Dimension, Dimension),
-    ) -> &mut Self {
-        self.value.borrow_mut().set_geometry((x, y, width, height));
-        self
-    }
+    pub(crate) children: Vec<Rc<RefCell<RendererObjectValue>>>,
 
-    pub fn get_geometry(&self) -> (Dimension, Dimension, Dimension, Dimension) {
-        self.value.borrow().get_geometry()
-    }
+    pub(crate) style: RendererObjectStyle,
 
-    pub fn set_default_background_color(&mut self, color: Color) -> &mut Self {
-        self.value.borrow_mut().set_default_background_color(color);
-        self
-    }
-
-    pub fn get_default_background_color(&self) -> Color {
-        self.value.borrow().get_default_background_color()
-    }
-
-    pub fn set_default_foreground_color(&mut self, color: Color) -> &mut Self {
-        self.value.borrow_mut().set_default_foreground_color(color);
-        self
-    }
-
-    pub fn get_default_foreground_color(&self) -> Color {
-        self.value.borrow().get_default_foreground_color()
-    }
-
-    pub fn set_default_character(&mut self, character: char) -> &mut Self {
-        self.value.borrow_mut().set_default_character(character);
-        self
-    }
-
-    pub fn get_default_character(&self) -> char {
-        self.value.borrow().get_default_character()
-    }
-
-    pub fn set_text(&mut self, text: &str) -> &mut Self {
-        self.value.borrow_mut().set_text(text);
-        self
-    }
-
-    pub fn get_text(&self) -> String {
-        self.value.borrow().get_text()
-    }
-
-    pub fn set_pattern(&mut self, pattern: &str) -> &mut Self {
-        self.value.borrow_mut().set_pattern(pattern);
-        self
-    }
-
-    pub fn get_pattern(&self) -> String {
-        self.value.borrow().get_pattern()
-    }
-
-    pub fn set_animation(&mut self, animation: &Vec<&str>) -> &mut Self {
-        self.value.borrow_mut().set_animation(animation);
-        self
-    }
-
-    pub fn get_animation(&self) -> Vec<String> {
-        self.value.borrow().get_animation()
-    }
-
-    pub fn set_current_frame(&mut self, frame: i64) -> &mut Self {
-        self.value.borrow_mut().set_current_frame(frame);
-        self
-    }
-
-    pub fn shift_current_frame(&mut self, shift_val: i64) -> &mut Self {
-        self.value.borrow_mut().shift_current_frame(shift_val);
-        self
-    }
-
-    pub fn get_current_frame(&self) -> i64 {
-        self.value.borrow().get_current_frame()
-    }
-
-    pub fn set_style(&mut self, style: RendererObjectStyle) -> &mut Self {
-        self.value.borrow_mut().set_style(style);
-        self
-    }
-
-    pub fn get_style(&self) -> RendererObjectStyle {
-        self.value.borrow().get_style()
-    }
-
-    pub fn set_colors(&mut self, colors: Vec<ColorArea>) -> &mut Self {
-        self.value.borrow_mut().set_colors(colors);
-        self
-    }
-
-    pub fn get_colors(&self) -> Vec<ColorArea> {
-        self.value.borrow().get_colors()
-    }
-
-    pub fn add_color(&mut self, color: &mut ColorArea) -> &mut Self {
-        self.value.borrow_mut().add_color(color);
-        self
-    }
-
-    pub fn remove_color(&mut self, color: &ColorArea) -> &mut Self {
-        self.value.borrow_mut().remove_color(color);
-        self
-    }
-
-    pub fn process_geometry(
-        &mut self,
-        renderer_width: i64,
-        renderer_height: i64,
-        parent_width: i64,
-        parent_height: i64,
-        renderer_padding: i64,
-    ) {
-        self.value.borrow_mut().process_geometry(
-            renderer_width,
-            renderer_height,
-            parent_width,
-            parent_height,
-            renderer_padding,
-        );
-    }
-
-    pub fn get_buffer(
-        &mut self,
-        absolute_x: i64,
-        absolute_y: i64,
-        renderer_padding: i64,
-    ) -> Vec<Vec<Pixel>> {
-        self.value
-            .borrow_mut()
-            .get_buffer(absolute_x, absolute_y, renderer_padding)
-            .clone()
-    }
-    //end of getters/setters
-    pub fn new() -> RendererObject {
-        let renderer_object_value = RendererObjectValue {
-            buffer: Vec::new(),
-            x: Dimension::Auto,
-            y: Dimension::Auto,
-            width: Dimension::Auto,
-            height: Dimension::Auto,
-            calculated_width: 0,
-            calculated_height: 0,
-            absolute_x: 0,
-            absolute_y: 0,
-            parent_width: 0,
-            parent_height: 0,
-            renderer_width: 0,
-            renderer_height: 0,
-            update_size: true,
-            update_content: true,
-            parent: None,
-            parent_location: 0,
-            default_character: '\0',
-            text: Vec::new(),
-            pattern: Vec::new(),
-            animation: Vec::new(),
-            current_animation_frame: 0,
-            colors: Vec::new(),
-            default_background_color: Colors::TRANSPARENT,
-            default_foreground_color: Colors::WHITE,
-            children: Vec::new(),
-            style: RendererObjectStyle::new(),
-        };
-
-        RendererObject {
-            value: Rc::new_cyclic(|_| RefCell::new(renderer_object_value)),
-        }
-    }
-
-    pub fn add_child(&mut self, child: &RendererObject) {
-        let mut current_value = self.value.borrow_mut();
-        let mut child_value = child.value.borrow_mut();
-        child_value.parent = Some(Rc::downgrade(&self.value.clone()));
-        child_value.parent_location = current_value.children.len();
-
-        current_value.children.push(child.value.clone());
-
-        current_value.update();
-    }
-
-    pub fn set_children(&mut self, children: &Vec<RendererObject>) {
-        let mut current_value = self.value.borrow_mut();
-        current_value.children = children.iter().map(|val| val.value.clone()).collect();
-        let children = current_value.children.clone();
-        for i in 0..children.len() {
-            children[i].borrow_mut().parent_location = i;
-            children[i].borrow_mut().parent = Some(Rc::downgrade(&self.value.clone()));
-        }
-        current_value.update();
-    }
-
-    pub fn get_children(&self) -> Vec<RendererObject> {
-        self.value
-            .borrow()
-            .children
-            .iter()
-            .map(|val| RendererObject { value: val.clone() })
-            .collect()
-    }
-
-    pub fn remove_child(&mut self, renderer_object: &RendererObject) {
-        self.value
-            .borrow_mut()
-            .children
-            .remove(renderer_object.value.borrow().parent_location);
-
-        let children = self.value.borrow_mut().children.clone();
-        for i in 0..children.len() {
-            children[i].borrow_mut().parent_location = i;
-        }
-
-        self.value.borrow_mut().update();
-    }
-}
-
-pub struct RendererObjectValue {
-    buffer: Vec<Vec<Pixel>>,
-
-    x: Dimension,
-    y: Dimension,
-    width: Dimension,
-    height: Dimension,
-
-    absolute_x: i64,
-    absolute_y: i64,
-
-    parent_width: i64,
-    parent_height: i64,
-
-    renderer_width: i64,
-    renderer_height: i64,
-
-    calculated_width: i64,
-    calculated_height: i64,
-
-    update_size: bool,
-    update_content: bool,
-
-    default_character: char,
-
-    text: Vec<Vec<char>>,
-
-    pattern: Vec<Vec<char>>,
-
-    animation: Vec<Vec<Vec<char>>>,
-    current_animation_frame: i64,
-
-    colors: Vec<ColorArea>,
-    default_background_color: Color,
-    default_foreground_color: Color,
-
-    children: Vec<Rc<RefCell<RendererObjectValue>>>,
-
-    style: RendererObjectStyle,
-
-    parent: Option<Weak<RefCell<RendererObjectValue>>>,
-    parent_location: usize,
+    pub(crate) parent: Option<Weak<RefCell<RendererObjectValue>>>,
+    pub(crate) parent_location: usize,
 }
 
 impl RendererObjectValue {
     //getters and setters
-    pub fn set_x(&mut self, x: Dimension) {
+    pub(crate) fn set_x(&mut self, x: Dimension) {
         if self.x != x {
             self.x = x;
             self.update_parent();
         }
     }
 
-    pub fn get_x(&self) -> Dimension {
+    pub(crate) fn get_x(&self) -> Dimension {
         self.x.clone()
     }
 
-    pub fn set_y(&mut self, y: Dimension) {
+    pub(crate) fn set_y(&mut self, y: Dimension) {
         if self.y != y {
             self.y = y;
             self.update_parent();
         }
     }
 
-    pub fn get_y(&self) -> Dimension {
+    pub(crate) fn get_y(&self) -> Dimension {
         self.y.clone()
     }
 
-    pub fn set_width(&mut self, width: Dimension) {
+    pub(crate) fn set_width(&mut self, width: Dimension) {
         if self.width != width {
             self.width = width;
             self.update_size = true;
@@ -359,11 +88,11 @@ impl RendererObjectValue {
         }
     }
 
-    pub fn get_width(&self) -> Dimension {
+    pub(crate) fn get_width(&self) -> Dimension {
         self.width.clone()
     }
 
-    pub fn set_height(&mut self, height: Dimension) {
+    pub(crate) fn set_height(&mut self, height: Dimension) {
         if self.height != height {
             self.height = height;
             self.update_size = true;
@@ -371,11 +100,11 @@ impl RendererObjectValue {
         }
     }
 
-    pub fn get_height(&self) -> Dimension {
+    pub(crate) fn get_height(&self) -> Dimension {
         self.height.clone()
     }
 
-    pub fn set_geometry(
+    pub(crate) fn set_geometry(
         &mut self,
         (x, y, width, height): (Dimension, Dimension, Dimension, Dimension),
     ) {
@@ -385,7 +114,7 @@ impl RendererObjectValue {
         self.set_height(height);
     }
 
-    pub fn get_geometry(&self) -> (Dimension, Dimension, Dimension, Dimension) {
+    pub(crate) fn get_geometry(&self) -> (Dimension, Dimension, Dimension, Dimension) {
         (
             self.get_x(),
             self.get_y(),
@@ -394,40 +123,40 @@ impl RendererObjectValue {
         )
     }
 
-    pub fn set_default_background_color(&mut self, color: Color) {
+    pub(crate) fn set_default_background_color(&mut self, color: Color) {
         if self.default_background_color != color {
             self.default_background_color = color;
             self.update();
         }
     }
 
-    pub fn get_default_background_color(&self) -> Color {
+    pub(crate) fn get_default_background_color(&self) -> Color {
         self.default_background_color
     }
 
-    pub fn set_default_foreground_color(&mut self, color: Color) {
+    pub(crate) fn set_default_foreground_color(&mut self, color: Color) {
         if self.default_foreground_color != color {
             self.default_foreground_color = color;
             self.update();
         }
     }
 
-    pub fn get_default_foreground_color(&self) -> Color {
+    pub(crate) fn get_default_foreground_color(&self) -> Color {
         self.default_foreground_color
     }
 
-    pub fn set_default_character(&mut self, character: char) {
+    pub(crate) fn set_default_character(&mut self, character: char) {
         if self.default_character != character {
             self.default_character = character;
             self.update();
         }
     }
 
-    pub fn get_default_character(&self) -> char {
+    pub(crate) fn get_default_character(&self) -> char {
         self.default_character
     }
 
-    pub fn set_text(&mut self, val: &str) {
+    pub(crate) fn set_text(&mut self, val: &str) {
         self.text = val
             .replace("\r\n", "\n")
             .split('\n')
@@ -436,7 +165,7 @@ impl RendererObjectValue {
         self.update();
     }
 
-    pub fn get_text(&self) -> String {
+    pub(crate) fn get_text(&self) -> String {
         self.text
             .iter()
             .map(|val| val.iter().collect())
@@ -444,7 +173,7 @@ impl RendererObjectValue {
             .join("\n")
     }
 
-    pub fn set_pattern(&mut self, val: &str) {
+    pub(crate) fn set_pattern(&mut self, val: &str) {
         self.pattern = val
             .replace("\r\n", "\n")
             .split('\n')
@@ -453,7 +182,7 @@ impl RendererObjectValue {
         self.update();
     }
 
-    pub fn get_pattern(&self) -> String {
+    pub(crate) fn get_pattern(&self) -> String {
         self.pattern
             .iter()
             .map(|val| val.iter().collect())
@@ -461,7 +190,7 @@ impl RendererObjectValue {
             .join("\n")
     }
 
-    pub fn set_animation(&mut self, val: &Vec<&str>) {
+    pub(crate) fn set_animation(&mut self, val: &Vec<&str>) {
         self.animation = val
             .iter()
             .map(|val| {
@@ -474,7 +203,7 @@ impl RendererObjectValue {
         self.update();
     }
 
-    pub fn get_animation(&self) -> Vec<String> {
+    pub(crate) fn get_animation(&self) -> Vec<String> {
         self.animation
             .iter()
             .map(|val| {
@@ -486,34 +215,34 @@ impl RendererObjectValue {
             .collect()
     }
 
-    pub fn set_current_frame(&mut self, current_animation_frame: i64) {
+    pub(crate) fn set_current_frame(&mut self, current_animation_frame: i64) {
         if self.current_animation_frame != current_animation_frame {
             self.current_animation_frame = current_animation_frame;
             self.update();
         }
     }
 
-    pub fn shift_current_frame(&mut self, shift_val: i64) {
+    pub(crate) fn shift_current_frame(&mut self, shift_val: i64) {
         if shift_val != 0 {
             self.current_animation_frame += shift_val;
             self.update();
         }
     }
 
-    pub fn get_current_frame(&self) -> i64 {
+    pub(crate) fn get_current_frame(&self) -> i64 {
         self.current_animation_frame
     }
 
-    pub fn set_style(&mut self, style: RendererObjectStyle) {
+    pub(crate) fn set_style(&mut self, style: RendererObjectStyle) {
         self.style = style;
         self.update();
     }
 
-    pub fn get_style(&self) -> RendererObjectStyle {
+    pub(crate) fn get_style(&self) -> RendererObjectStyle {
         self.style.clone()
     }
 
-    pub fn set_colors(&mut self, mut val: Vec<ColorArea>) {
+    pub(crate) fn set_colors(&mut self, mut val: Vec<ColorArea>) {
         for i in 0..val.len() {
             val[i].renderer_object_index = i;
         }
@@ -521,59 +250,21 @@ impl RendererObjectValue {
         self.update();
     }
 
-    pub fn get_colors(&self) -> Vec<ColorArea> {
+    pub(crate) fn get_colors(&self) -> Vec<ColorArea> {
         self.colors.clone()
     }
 
-    pub fn add_color(&mut self, val: &mut ColorArea) {
+    pub(crate) fn add_color(&mut self, val: &mut ColorArea) {
         val.renderer_object_index = self.colors.len();
         self.colors.push(val.clone());
         self.update();
     }
 
-    pub fn remove_color(&mut self, val: &ColorArea) {
+    pub(crate) fn remove_color(&mut self, val: &ColorArea) {
         self.colors.remove(val.renderer_object_index);
         self.update();
     }
     //end of getters/setters
-
-    fn generic_dimension_calc(
-        dim: &Dimension,
-        parent_width: i64,
-        parent_height: i64,
-        renderer_width: i64,
-        renderer_height: i64,
-        horizontal: bool,
-    ) -> i64 {
-        match dim {
-            Dimension::Auto => 0,
-            Dimension::Pixel(val) => *val,
-            Dimension::Percent(val) => (if horizontal {
-                parent_width
-            } else {
-                parent_height
-            } as f64
-                * val
-                * 0.01)
-                .round() as i64,
-            Dimension::PW(val) => (parent_width as f64 * val * 0.01).round() as i64,
-            Dimension::PH(val) => (parent_height as f64 * val * 0.01).round() as i64,
-            Dimension::PMin(val) => {
-                (parent_width.min(parent_height) as f64 * val * 0.01).round() as i64
-            }
-            Dimension::PMax(val) => {
-                (parent_width.max(parent_height) as f64 * val * 0.01).round() as i64
-            }
-            Dimension::VW(val) => (renderer_width as f64 * val * 0.01).round() as i64,
-            Dimension::VH(val) => (renderer_height as f64 * val * 0.01).round() as i64,
-            Dimension::VMin(val) => {
-                (renderer_width.min(renderer_height) as f64 * val * 0.01).round() as i64
-            }
-            Dimension::VMax(val) => {
-                (renderer_width.max(renderer_height) as f64 * val * 0.01).round() as i64
-            }
-        }
-    }
 
     fn calculate_geometry(
         &self,
@@ -582,7 +273,7 @@ impl RendererObjectValue {
         renderer_width: i64,
         renderer_height: i64,
     ) -> (i64, i64) {
-        let mut width = Self::generic_dimension_calc(
+        let mut width = generic_dimension_calc(
             &self.width,
             parent_width,
             parent_height,
@@ -612,7 +303,7 @@ impl RendererObjectValue {
                     ) => {
                         width = width.max(
                             child.borrow().calculated_width
-                                + Self::generic_dimension_calc(
+                                + generic_dimension_calc(
                                     &child_ref.x,
                                     0,
                                     0,
@@ -635,7 +326,7 @@ impl RendererObjectValue {
             }
         }
 
-        let mut height = Self::generic_dimension_calc(
+        let mut height = generic_dimension_calc(
             &self.height,
             parent_width,
             parent_height,
@@ -665,7 +356,7 @@ impl RendererObjectValue {
                     ) => {
                         height = height.max(
                             child.borrow().calculated_height
-                                + Self::generic_dimension_calc(
+                                + generic_dimension_calc(
                                     &child_ref.y,
                                     0,
                                     0,
@@ -812,7 +503,7 @@ impl RendererObjectValue {
             .max(0);
 
         for color_area in &self.colors {
-            let color_x = Self::generic_dimension_calc(
+            let color_x = generic_dimension_calc(
                 &color_area.x,
                 self.calculated_width,
                 self.calculated_height,
@@ -820,7 +511,7 @@ impl RendererObjectValue {
                 self.renderer_height,
                 true,
             );
-            let color_y = Self::generic_dimension_calc(
+            let color_y = generic_dimension_calc(
                 &color_area.y,
                 self.calculated_width,
                 self.calculated_height,
@@ -828,7 +519,7 @@ impl RendererObjectValue {
                 self.renderer_height,
                 false,
             );
-            let mut color_width = Self::generic_dimension_calc(
+            let mut color_width = generic_dimension_calc(
                 &color_area.width,
                 self.calculated_width,
                 self.calculated_height,
@@ -841,7 +532,7 @@ impl RendererObjectValue {
                 color_width = self.calculated_width;
             }
 
-            let mut color_height = Self::generic_dimension_calc(
+            let mut color_height = generic_dimension_calc(
                 &color_area.height,
                 self.calculated_width,
                 self.calculated_height,
@@ -914,7 +605,7 @@ impl RendererObjectValue {
 
         for child_cell in &self.children {
             let mut child = child_cell.borrow_mut();
-            let child_x = Self::generic_dimension_calc(
+            let child_x = generic_dimension_calc(
                 &child.x,
                 self.calculated_width,
                 self.calculated_height,
@@ -922,7 +613,7 @@ impl RendererObjectValue {
                 self.renderer_height,
                 true,
             );
-            let child_y = Self::generic_dimension_calc(
+            let child_y = generic_dimension_calc(
                 &child.y,
                 self.calculated_width,
                 self.calculated_height,
@@ -1075,7 +766,7 @@ impl RendererObjectValue {
         }
     }
 
-    pub fn process_geometry(
+    pub(crate) fn process_geometry(
         &mut self,
         renderer_width: i64,
         renderer_height: i64,
@@ -1276,7 +967,7 @@ impl RendererObjectValue {
         }
     }
 
-    pub fn get_buffer(
+    pub(crate) fn get_buffer(
         &mut self,
         absolute_x: i64,
         absolute_y: i64,
@@ -1323,14 +1014,14 @@ impl RendererObjectValue {
         &self.buffer
     }
 
-    pub fn update(&mut self) {
+    pub(crate) fn update(&mut self) {
         if !self.update_content {
             self.update_content = true;
             self.update_parent();
         }
     }
 
-    pub fn update_parent(&self) {
+    pub(crate) fn update_parent(&self) {
         if self.parent.is_some() {
             let parent_ref = self.parent.as_ref().unwrap().upgrade();
             if parent_ref.is_some() {
