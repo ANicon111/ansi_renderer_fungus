@@ -1,5 +1,3 @@
-use tests::run_tests;
-
 pub mod color;
 pub mod color_area;
 pub mod colors;
@@ -11,7 +9,3 @@ pub mod renderer_object;
 pub mod renderer_object_border;
 pub mod renderer_object_style;
 pub mod tests;
-
-fn main() {
-    run_tests();
-}

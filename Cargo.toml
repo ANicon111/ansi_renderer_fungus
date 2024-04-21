@@ -1,5 +1,5 @@
 [package]
-name = "ansi_renderer"
+name = "ansi_renderer_fungus"
 version = "0.1.0"
 edition = "2021"
 
