@@ -131,8 +131,7 @@ impl Renderer {
                     }
                 }
 
-                self.console
-                    .set_cursor_position(self.width - 1, self.height - 1);
+                self.console.set_cursor_position(end_x, end_y);
                 if self.disable_output {
                     self.console.clear();
                 } else {
