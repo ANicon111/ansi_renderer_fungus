@@ -1,6 +1,12 @@
 #[cfg(test)]
 mod tests {
-    use std::time::{Duration, Instant};
+    use std::{
+        io::{self, Write},
+        thread,
+        time::{Duration, Instant},
+    };
+
+    use terminal_size::terminal_size;
 
     use crate::{
         color::Color,
@@ -159,6 +165,11 @@ mod tests {
 
     #[test]
     fn renderer_test() {
+        //show the results of the other tests first
+        thread::sleep(Duration::from_secs(1));
+        for _ in 0..terminal_size().unwrap().1 .0 {
+            io::stdout().write("\n".as_bytes()).unwrap();
+        }
         let mut renderer = Renderer::new();
         let water_color = Colors::DARK_SLATE_BLUE.with_luminosity(0.1).with_alpha(0.7);
 
@@ -421,10 +432,24 @@ mod tests {
             previous_frame_count = frame_count;
         }
 
-        println!("\n\n\nFrames rendered in 10 seconds: {}", frame_count);
-        println!("Minimum frames per 1/4s: {}", min_frames_per_fourth);
-        println!("Maximum frames per 1/4s: {}", max_frames_per_fourth);
-        println!("Minimum frames per 1s: {}", min_frames_per_second);
-        println!("Maximum frames per 1s: {}", max_frames_per_second);
+        io::stdout()
+            .write_all(
+                format!(
+                    "
+Frames rendered in 10 seconds: {}        
+Minimum frames per 1/4s: {}
+Maximum frames per 1/4s: {}
+Minimum frames per 1s: {}
+Maximum frames per 1s: {}
+",
+                    frame_count,
+                    min_frames_per_fourth,
+                    max_frames_per_fourth,
+                    min_frames_per_second,
+                    max_frames_per_second
+                )
+                .as_bytes(),
+            )
+            .unwrap();
     }
 }
