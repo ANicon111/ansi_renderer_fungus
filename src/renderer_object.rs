@@ -47,6 +47,10 @@ impl RendererObject {
         self.value.borrow().get_width()
     }
 
+    pub fn get_calculated_width(&self) -> i64 {
+        self.value.borrow().calculated_width
+    }
+
     pub fn set_height(&mut self, height: Dimension) -> &mut Self {
         self.value.borrow_mut().set_height(height);
         self
@@ -54,6 +58,10 @@ impl RendererObject {
 
     pub fn get_height(&self) -> Dimension {
         self.value.borrow().get_height()
+    }
+
+    pub fn get_calculated_height(&self) -> i64 {
+        self.value.borrow().calculated_height
     }
 
     pub fn set_geometry(
@@ -164,22 +172,29 @@ impl RendererObject {
         self
     }
 
-    pub fn get_buffer(
+    pub fn process_geometry(
         &mut self,
         renderer_width: i64,
         renderer_height: i64,
         parent_width: i64,
         parent_height: i64,
-        absolute_x: i64,
-        absolute_y: i64,
         renderer_padding: i64,
-    ) -> Vec<Vec<Pixel>> {
+    ) {
         self.value.borrow_mut().process_geometry(
             renderer_width,
             renderer_height,
             parent_width,
             parent_height,
+            renderer_padding,
         );
+    }
+
+    pub fn get_buffer(
+        &mut self,
+        absolute_x: i64,
+        absolute_y: i64,
+        renderer_padding: i64,
+    ) -> Vec<Vec<Pixel>> {
         self.value
             .borrow_mut()
             .get_buffer(absolute_x, absolute_y, renderer_padding)
@@ -673,11 +688,15 @@ impl RendererObjectValue {
     }
 
     fn draw_text(&mut self, renderer_padding: i64) {
-        let start_x: i64 = (-self.absolute_x - renderer_padding).max(0);
+        let start_x: i64 = (-self.absolute_x - renderer_padding)
+            .min(self.calculated_width)
+            .max(0);
         let end_x: i64 = (self.absolute_x + renderer_padding + self.renderer_width)
             .min(self.calculated_width)
             .max(0);
-        let start_y: i64 = (-self.absolute_y - renderer_padding).max(0);
+        let start_y: i64 = (-self.absolute_y - renderer_padding)
+            .min(self.calculated_height)
+            .max(0);
         let end_y: i64 = (self.absolute_y + renderer_padding + self.renderer_height)
             .min(self.calculated_height)
             .max(0);
@@ -711,22 +730,26 @@ impl RendererObjectValue {
     }
 
     fn draw_pattern(&mut self, renderer_padding: i64) {
-        let start_x: i64 = (-self.absolute_x - renderer_padding).max(0);
+        let start_x: i64 = (-self.absolute_x - renderer_padding)
+            .min(self.calculated_width)
+            .max(0);
         let end_x: i64 = (-self.absolute_x + renderer_padding + self.renderer_width)
             .min(self.calculated_width)
             .max(0);
-        let start_y: i64 = (-self.absolute_y - renderer_padding).max(0);
+        let start_y: i64 = (-self.absolute_y - renderer_padding)
+            .min(self.calculated_height)
+            .max(0);
         let end_y: i64 = (-self.absolute_y + renderer_padding + self.renderer_height)
             .min(self.calculated_height)
             .max(0);
 
-        for i in start_y as usize..end_y as usize {
-            let chars: &Vec<char> = &self.pattern[i % self.pattern.len()];
+        for i in start_y..end_y {
+            let chars: &Vec<char> = &self.pattern[i as usize % self.pattern.len()];
             if chars.len() > 0 {
-                for j in start_x as usize..end_x as usize {
-                    let new_val = chars[j % chars.len()];
+                for j in start_x..end_x {
+                    let new_val = chars[j as usize % chars.len()];
                     if new_val != '\0' {
-                        self.buffer[i][j].value = new_val;
+                        self.buffer[(i - start_y) as usize][(j - start_x) as usize].value = new_val;
                     }
                 }
             }
@@ -734,11 +757,15 @@ impl RendererObjectValue {
     }
 
     fn draw_animation(&mut self, renderer_padding: i64, current_animation_frame: i64) {
-        let start_x: i64 = (-self.absolute_x - renderer_padding).max(0);
+        let start_x: i64 = (-self.absolute_x - renderer_padding)
+            .min(self.calculated_width)
+            .max(0);
         let end_x: i64 = (-self.absolute_x + renderer_padding + self.renderer_width)
             .min(self.calculated_width)
             .max(0);
-        let start_y: i64 = (-self.absolute_y - renderer_padding).max(0);
+        let start_y: i64 = (-self.absolute_y - renderer_padding)
+            .min(self.calculated_height)
+            .max(0);
         let end_y: i64 = (-self.absolute_y + renderer_padding + self.renderer_height)
             .min(self.calculated_height)
             .max(0);
@@ -771,11 +798,15 @@ impl RendererObjectValue {
     }
 
     fn draw_colors(&mut self, renderer_padding: i64) {
-        let start_x: i64 = (-self.absolute_x - renderer_padding).max(0);
+        let start_x: i64 = (-self.absolute_x - renderer_padding)
+            .min(self.calculated_width)
+            .max(0);
         let end_x: i64 = (-self.absolute_x + renderer_padding + self.renderer_width)
             .min(self.calculated_width)
             .max(0);
-        let start_y: i64 = (-self.absolute_y - renderer_padding).max(0);
+        let start_y: i64 = (-self.absolute_y - renderer_padding)
+            .min(self.calculated_height)
+            .max(0);
         let end_y: i64 = (-self.absolute_y + renderer_padding + self.renderer_height)
             .min(self.calculated_height)
             .max(0);
@@ -850,16 +881,16 @@ impl RendererObjectValue {
                 for j in color_start_x..color_end_x {
                     match color_area.layer {
                         ColorLayer::Background => {
-                            self.buffer[i as usize][j as usize].background = self.buffer[i as usize]
-                                [j as usize]
-                                .background
-                                .with_overlay(color_area.color)
+                            self.buffer[(i - start_y) as usize][(j - start_x) as usize].background =
+                                self.buffer[(i - start_y) as usize][(j - start_x) as usize]
+                                    .background
+                                    .with_overlay(color_area.color)
                         }
                         ColorLayer::Foreground => {
-                            self.buffer[i as usize][j as usize].foreground = self.buffer[i as usize]
-                                [j as usize]
-                                .foreground
-                                .with_overlay(color_area.color)
+                            self.buffer[(i - start_y) as usize][(j - start_x) as usize].foreground =
+                                self.buffer[(i - start_y) as usize][(j - start_x) as usize]
+                                    .foreground
+                                    .with_overlay(color_area.color)
                         }
                     }
                 }
@@ -868,11 +899,15 @@ impl RendererObjectValue {
     }
 
     fn draw_children(&mut self, renderer_padding: i64) {
-        let start_x: i64 = (-self.absolute_x - renderer_padding).max(0);
+        let start_x: i64 = (-self.absolute_x - renderer_padding)
+            .min(self.calculated_width)
+            .max(0);
         let end_x: i64 = (-self.absolute_x + renderer_padding + self.renderer_width)
             .min(self.calculated_width)
             .max(0);
-        let start_y: i64 = (-self.absolute_y - renderer_padding).max(0);
+        let start_y: i64 = (-self.absolute_y - renderer_padding)
+            .min(self.calculated_height)
+            .max(0);
         let end_y: i64 = (-self.absolute_y + renderer_padding + self.renderer_height)
             .min(self.calculated_height)
             .max(0);
@@ -928,14 +963,12 @@ impl RendererObjectValue {
             let child_end_x = end_x.min(alignment_offset_x + child_x + child_width);
             let child_start_y = start_y.max(alignment_offset_y + child_y);
             let child_end_y = end_y.min(alignment_offset_y + child_y + child_height);
-            let child_buffer_offset_x = alignment_offset_x + child_x;
-            let child_buffer_offset_y = alignment_offset_y + child_y;
             for i in child_start_y..child_end_y {
                 for j in child_start_x..child_end_x {
-                    self.buffer[i as usize][j as usize] = self.buffer[i as usize][j as usize]
-                        .with_overlay(
-                            &child_buffer[(i - child_buffer_offset_y) as usize]
-                                [(j - child_buffer_offset_x) as usize],
+                    self.buffer[(i - start_y) as usize][(j - start_x) as usize] =
+                        self.buffer[(i - start_y) as usize][(j - start_x) as usize].with_overlay(
+                            &child_buffer[(i - child_start_y) as usize]
+                                [(j - child_start_x) as usize],
                         );
                 }
             }
@@ -951,9 +984,9 @@ impl RendererObjectValue {
                 && child_top - 1 < end_y
             {
                 for j in child_left.max(start_x)..=child_right.min(end_x - 1) {
-                    self.buffer[(child_top - 1) as usize][j as usize] = self.buffer
-                        [(child_top - 1) as usize][j as usize]
-                        .with_overlay(&child.style.border.top);
+                    self.buffer[(child_top - 1 - start_y) as usize][(j - start_x) as usize] =
+                        self.buffer[(child_top - 1 - start_y) as usize][(j - start_x) as usize]
+                            .with_overlay(&child.style.border.top);
                 }
             }
 
@@ -962,9 +995,9 @@ impl RendererObjectValue {
                 && child_bottom + 1 < end_y
             {
                 for j in child_left.max(start_x)..=child_right.min(end_x - 1) {
-                    self.buffer[(child_bottom + 1) as usize][j as usize] = self.buffer
-                        [(child_bottom + 1) as usize][j as usize]
-                        .with_overlay(&child.style.border.bottom);
+                    self.buffer[(child_bottom + 1 - start_y) as usize][(j - start_x) as usize] =
+                        self.buffer[(child_bottom + 1 - start_y) as usize][(j - start_x) as usize]
+                            .with_overlay(&child.style.border.bottom);
                 }
             }
 
@@ -973,9 +1006,9 @@ impl RendererObjectValue {
                 && child_left - 1 < end_x
             {
                 for i in child_top.max(start_y)..=child_bottom.min(end_y - 1) {
-                    self.buffer[i as usize][(child_left - 1) as usize] = self.buffer[i as usize]
-                        [(child_left - 1) as usize]
-                        .with_overlay(&child.style.border.left);
+                    self.buffer[(i - start_y) as usize][(child_left - 1 - start_x) as usize] =
+                        self.buffer[(i - start_y) as usize][(child_left - 1 - start_x) as usize]
+                            .with_overlay(&child.style.border.left);
                 }
             }
 
@@ -984,9 +1017,9 @@ impl RendererObjectValue {
                 && child_right + 1 < end_x
             {
                 for i in child_top.max(start_y)..=child_bottom.min(end_y - 1) {
-                    self.buffer[i as usize][(child_right + 1) as usize] = self.buffer[i as usize]
-                        [(child_right + 1) as usize]
-                        .with_overlay(&child.style.border.right);
+                    self.buffer[(i - start_y) as usize][(child_right + 1 - start_x) as usize] =
+                        self.buffer[(i - start_y) as usize][(child_right + 1 - start_x) as usize]
+                            .with_overlay(&child.style.border.right);
                 }
             }
 
@@ -996,8 +1029,9 @@ impl RendererObjectValue {
                 && child_left - 1 >= start_x
                 && child_left - 1 < end_x
             {
-                self.buffer[(child_top - 1) as usize][(child_left - 1) as usize] = self.buffer
-                    [(child_top - 1) as usize][(child_left - 1) as usize]
+                self.buffer[(child_top - 1 - start_y) as usize]
+                    [(child_left - 1 - start_x) as usize] = self.buffer
+                    [(child_top - 1 - start_y) as usize][(child_left - 1 - start_x) as usize]
                     .with_overlay(&child.style.border.top_left);
             }
 
@@ -1007,8 +1041,9 @@ impl RendererObjectValue {
                 && child_right + 1 >= start_x
                 && child_right + 1 < end_x
             {
-                self.buffer[(child_top - 1) as usize][(child_right + 1) as usize] = self.buffer
-                    [(child_top - 1) as usize][(child_right + 1) as usize]
+                self.buffer[(child_top - 1 - start_y) as usize]
+                    [(child_right + 1 - start_x) as usize] = self.buffer
+                    [(child_top - 1 - start_y) as usize][(child_right + 1 - start_x) as usize]
                     .with_overlay(&child.style.border.top_right);
             }
 
@@ -1018,8 +1053,10 @@ impl RendererObjectValue {
                 && child_right + 1 >= start_x
                 && child_right + 1 < end_x
             {
-                self.buffer[(child_bottom + 1) as usize][(child_right + 1) as usize] = self.buffer
-                    [(child_bottom + 1) as usize][(child_right + 1) as usize]
+                self.buffer[(child_bottom + 1 - start_y) as usize]
+                    [(child_right + 1 - start_x) as usize] = self.buffer
+                    [(child_bottom + 1 - start_y) as usize]
+                    [(child_right + 1 - start_x) as usize]
                     .with_overlay(&child.style.border.bottom_right);
             }
 
@@ -1029,8 +1066,10 @@ impl RendererObjectValue {
                 && child_left - 1 >= start_x
                 && child_left - 1 < end_x
             {
-                self.buffer[(child_bottom + 1) as usize][(child_left - 1) as usize] = self.buffer
-                    [(child_bottom + 1) as usize][(child_left - 1) as usize]
+                self.buffer[(child_bottom + 1 - start_y) as usize]
+                    [(child_left - 1 - start_x) as usize] = self.buffer
+                    [(child_bottom + 1 - start_y) as usize]
+                    [(child_left - 1 - start_x) as usize]
                     .with_overlay(&child.style.border.bottom_left);
             }
         }
@@ -1042,6 +1081,7 @@ impl RendererObjectValue {
         renderer_height: i64,
         parent_width: i64,
         parent_height: i64,
+        renderer_padding: i64,
     ) {
         if renderer_width != self.renderer_width {
             self.renderer_width = renderer_width;
@@ -1141,7 +1181,13 @@ impl RendererObjectValue {
                         | Dimension::PMin(_)
                         | Dimension::PMax(_),
                     ) => (),
-                    _ => child.process_geometry(renderer_width, renderer_height, 0, 0),
+                    _ => child.process_geometry(
+                        renderer_width,
+                        renderer_height,
+                        0,
+                        0,
+                        renderer_padding,
+                    ),
                 }
             }
         }
@@ -1173,6 +1219,16 @@ impl RendererObjectValue {
                     self.renderer_height,
                 );
             }
+            let width: i64 = (-self.absolute_x + self.renderer_width)
+                .min(self.calculated_width)
+                .max(0)
+                - (-self.absolute_x).min(self.calculated_width).max(0)
+                + 2 * renderer_padding;
+            let height: i64 = (-self.absolute_y + self.renderer_height)
+                .min(self.calculated_height)
+                .max(0)
+                - (-self.absolute_y).min(self.calculated_height).max(0)
+                + 2 * renderer_padding;
             self.buffer = vec::from_elem(
                 vec::from_elem(
                     Pixel {
@@ -1180,9 +1236,9 @@ impl RendererObjectValue {
                         background: self.default_background_color,
                         foreground: self.default_foreground_color,
                     },
-                    self.calculated_width as usize,
+                    width as usize,
                 ),
-                self.calculated_height as usize,
+                height as usize,
             );
             self.update_size = false;
         }
@@ -1212,6 +1268,7 @@ impl RendererObjectValue {
                         renderer_height,
                         self.calculated_width,
                         self.calculated_height,
+                        renderer_padding,
                     ),
                     _ => (),
                 }

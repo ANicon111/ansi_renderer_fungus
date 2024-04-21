@@ -72,20 +72,18 @@ impl Renderer {
                         self.height as usize,
                     );
                 }
-                let current_buffer = object.get_buffer(self.width, self.height, 0, 0, 0, 0, 5);
 
-                let object_height = current_buffer.len();
-                let object_width = match current_buffer.first() {
-                    Some(val) => val.len(),
-                    None => 0,
-                };
+                object.process_geometry(self.width, self.height, 0, 0, self.padding);
+
+                let object_height = object.get_calculated_height();
+                let object_width = object.get_calculated_width();
 
                 let style = object.get_style();
                 let alignment_offset_x: i64 = if let Some(style) = style.external_alignment_x {
                     match style {
                         AlignmentX::Left => 0,
-                        AlignmentX::Center => self.width / 2 - object_width as i64 / 2,
-                        AlignmentX::Right => self.width - object_width as i64,
+                        AlignmentX::Center => self.width / 2 - object_width / 2,
+                        AlignmentX::Right => self.width - object_width,
                     }
                 } else {
                     0
@@ -93,32 +91,39 @@ impl Renderer {
                 let alignment_offset_y: i64 = if let Some(style) = style.external_alignment_y {
                     match style {
                         AlignmentY::Top => 0,
-                        AlignmentY::Center => self.height / 2 - object_height as i64 / 2,
-                        AlignmentY::Bottom => self.height - object_height as i64,
+                        AlignmentY::Center => self.height / 2 - object_height / 2,
+                        AlignmentY::Bottom => self.height - object_height,
                     }
                 } else {
                     0
                 };
+                let current_buffer =
+                    object.get_buffer(alignment_offset_x, alignment_offset_y, self.padding);
 
-                let start_x = alignment_offset_x.max(0);
-                let end_x = (alignment_offset_x + object_width as i64).min(self.width);
-                let start_y = alignment_offset_y.max(0);
-                let end_y = (alignment_offset_y + object_height as i64).min(self.height);
+                let start_x = alignment_offset_x.max(0).min(self.width);
+                let end_x = (alignment_offset_x + object_width as i64)
+                    .max(0)
+                    .min(self.width);
+                let start_y = alignment_offset_y.max(0).min(self.height);
+                let end_y = (alignment_offset_y + object_height as i64)
+                    .max(0)
+                    .min(self.height);
 
                 let mut last_i = -1;
                 for i in start_y..end_y {
                     let mut last_j = -1;
                     for j in start_x..end_x {
-                        let current_pixel = current_buffer[(i - alignment_offset_y) as usize]
-                            [(j - alignment_offset_x) as usize]
+                        let padding = (self.width - terminal_width).max(0).min(self.padding);
+                        let current_pixel = current_buffer[(i - start_y + padding) as usize]
+                            [(j - start_x + padding) as usize]
                             .clone();
                         if self.previous_buffer[i as usize][j as usize] != current_pixel
                             || force_update
                         {
                             if j != last_j + 1 || i != last_i {
                                 self.console.set_cursor_position(j, i);
-                                last_j = j;
                                 last_i = i;
+                                last_j = j;
                             }
                             self.previous_buffer[i as usize][j as usize] = current_pixel.clone();
                             self.console.print(current_pixel);

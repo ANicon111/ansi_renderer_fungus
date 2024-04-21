@@ -260,6 +260,7 @@ fn renderer_test() {
     waves.set_default_foreground_color(Colors::INVALID);
 
     let mut moon = RendererObject::new();
+    moon.set_x(Dimension::Pixel(-2));
     moon.set_animation(&mut vec![
         "▗▟▀▔
 █▌
@@ -301,7 +302,7 @@ fn renderer_test() {
     title.set_default_character(' ');
     title.set_text(
         "
-   Night          Seascapes  
+ Night          Seascapes 
 ",
     );
     title.set_style({
@@ -318,9 +319,9 @@ fn renderer_test() {
     title.set_colors(vec![
         ColorArea::new(Colors::BLACK.with_alpha(0.5), ColorLayer::Background),
         *ColorArea::new(Colors::SLATE_BLUE, ColorLayer::Foreground)
-            .set_geometry(Dimensions::pixel(8, 0, 9, 1)),
+            .set_geometry(Dimensions::pixel(7, 0, 9, 1)),
         *ColorArea::new(Colors::DARK_GOLDENROD, ColorLayer::Foreground)
-            .set_geometry(Dimensions::pixel(-9, 0, 5, 1)),
+            .set_geometry(Dimensions::pixel(-10, 0, 5, 1)),
     ]);
     title.set_children(&vec![moon.clone()]);
 
@@ -380,6 +381,7 @@ fn renderer_test() {
         waves.clone(),
         title.clone(),
     ]);
+
     renderer.set_object(Some(&root));
 
     let mut frame_count = 0;
