@@ -449,7 +449,7 @@ mod tests {
                 .write_all(
                     format!(
                         "
-Sync running results:
+Synchronous rendering results:
 
 Frames rendered in 5 seconds: {}        
 Minimum frames per 1/4s: {}
@@ -506,6 +506,7 @@ Maximum frame time: {:?}
                     format!(
                         "
 Threaded rendering with 120fps physics:
+
 Frames rendered in 5 seconds: {}        
 Minimum frames per 1/4s: {}
 Maximum frames per 1/4s: {}
