@@ -14,7 +14,7 @@ pub enum AlignmentY {
     Bottom,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct RendererObjectStyle {
     pub border: Border,
     pub internal_alignment_x: AlignmentX,

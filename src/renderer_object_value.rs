@@ -11,6 +11,7 @@ use crate::{
     pixel::Pixel,
     renderer_object_style::{AlignmentX, AlignmentY, RendererObjectStyle},
 };
+
 #[derive(Clone)]
 pub(crate) struct RendererObjectValue {
     pub(crate) buffer: Vec<Vec<Pixel>>,
@@ -38,233 +39,132 @@ pub(crate) struct RendererObjectValue {
     pub(crate) default_character: char,
 
     pub(crate) text: Vec<Vec<char>>,
+    pub(crate) changed_text: bool,
 
     pub(crate) pattern: Vec<Vec<char>>,
+    pub(crate) changed_pattern: bool,
 
     pub(crate) animation: Vec<Vec<Vec<char>>>,
+    pub(crate) changed_animation: bool,
     pub(crate) current_animation_frame: i64,
 
     pub(crate) colors: Vec<ColorArea>,
+    pub(crate) changed_colors: bool,
     pub(crate) default_background_color: Color,
     pub(crate) default_foreground_color: Color,
 
     pub(crate) children: Vec<Arc<RwLock<RendererObjectValue>>>,
+    pub(crate) changed_children: bool,
 
     pub(crate) style: RendererObjectStyle,
+    pub(crate) changed_style: bool,
 
     pub(crate) parent: Option<Weak<RwLock<RendererObjectValue>>>,
     pub(crate) parent_location: usize,
+
+    pub(crate) new_self: Option<Arc<RwLock<RendererObjectValue>>>,
 }
 
 impl RendererObjectValue {
-    //getters and setters
-    pub(crate) fn set_x(&mut self, x: Dimension) {
-        if self.x != x {
-            self.x = x;
-            self.update_parent();
+    ///returns update_parent
+    pub(crate) fn update_value(&mut self) -> bool {
+        let mut update = false;
+        let mut update_parent = false;
+        {
+            let binding = self.new_self.clone().unwrap();
+            let mut new_self = binding.write().unwrap();
+
+            self.parent = new_self.parent.clone();
+            self.parent_location = new_self.parent_location;
+
+            if self.x != new_self.x {
+                self.x = new_self.x;
+                update_parent = true;
+            }
+
+            if self.y != new_self.y {
+                self.y = new_self.y;
+                update_parent = true;
+            }
+
+            if self.width != new_self.width {
+                self.width = new_self.width;
+                update = true;
+            }
+
+            if self.height != new_self.height {
+                self.height = new_self.height;
+                update = true;
+            }
+
+            if self.default_character != new_self.default_character {
+                self.default_character = new_self.default_character;
+                update = true;
+            }
+
+            if self.default_background_color != new_self.default_background_color {
+                self.default_background_color = new_self.default_background_color;
+                update = true;
+            }
+
+            if self.default_foreground_color != new_self.default_foreground_color {
+                self.default_foreground_color = new_self.default_foreground_color;
+                update = true;
+            }
+
+            if self.current_animation_frame != new_self.current_animation_frame {
+                self.current_animation_frame = new_self.current_animation_frame;
+                update = true;
+            }
+
+            if new_self.changed_text {
+                self.text = new_self.text.clone();
+                new_self.changed_text = false;
+                update = true;
+            }
+
+            if new_self.changed_pattern {
+                self.pattern = new_self.pattern.clone();
+                new_self.changed_pattern = false;
+                update = true;
+            }
+
+            if new_self.changed_animation {
+                self.animation = new_self.animation.clone();
+                new_self.changed_animation = false;
+                update = true;
+            }
+
+            if new_self.changed_style {
+                self.style = new_self.style.clone();
+                new_self.changed_style = false;
+                update = true;
+            }
+
+            if new_self.changed_colors {
+                self.colors = new_self.colors.clone();
+                new_self.changed_colors = false;
+                update = true;
+            }
+
+            if new_self.changed_children {
+                self.children = new_self.children.clone();
+                new_self.changed_children = false;
+                update = true;
+            }
         }
-    }
 
-    pub(crate) fn get_x(&self) -> Dimension {
-        self.x.clone()
-    }
-
-    pub(crate) fn set_y(&mut self, y: Dimension) {
-        if self.y != y {
-            self.y = y;
-            self.update_parent();
+        for i in 0..self.children.len() {
+            let mut child = self.children[i].try_write().unwrap();
+            update = child.update_value() || update;
         }
-    }
 
-    pub(crate) fn get_y(&self) -> Dimension {
-        self.y.clone()
-    }
-
-    pub(crate) fn set_width(&mut self, width: Dimension) {
-        if self.width != width {
-            self.width = width;
-            self.update_size = true;
+        if update {
             self.update();
+            update_parent = true;
         }
+        return update_parent;
     }
-
-    pub(crate) fn get_width(&self) -> Dimension {
-        self.width.clone()
-    }
-
-    pub(crate) fn set_height(&mut self, height: Dimension) {
-        if self.height != height {
-            self.height = height;
-            self.update_size = true;
-            self.update();
-        }
-    }
-
-    pub(crate) fn get_height(&self) -> Dimension {
-        self.height.clone()
-    }
-
-    pub(crate) fn set_geometry(
-        &mut self,
-        (x, y, width, height): (Dimension, Dimension, Dimension, Dimension),
-    ) {
-        self.set_x(x);
-        self.set_y(y);
-        self.set_width(width);
-        self.set_height(height);
-    }
-
-    pub(crate) fn get_geometry(&self) -> (Dimension, Dimension, Dimension, Dimension) {
-        (
-            self.get_x(),
-            self.get_y(),
-            self.get_width(),
-            self.get_height(),
-        )
-    }
-
-    pub(crate) fn set_default_background_color(&mut self, color: Color) {
-        if self.default_background_color != color {
-            self.default_background_color = color;
-            self.update();
-        }
-    }
-
-    pub(crate) fn get_default_background_color(&self) -> Color {
-        self.default_background_color
-    }
-
-    pub(crate) fn set_default_foreground_color(&mut self, color: Color) {
-        if self.default_foreground_color != color {
-            self.default_foreground_color = color;
-            self.update();
-        }
-    }
-
-    pub(crate) fn get_default_foreground_color(&self) -> Color {
-        self.default_foreground_color
-    }
-
-    pub(crate) fn set_default_character(&mut self, character: char) {
-        if self.default_character != character {
-            self.default_character = character;
-            self.update();
-        }
-    }
-
-    pub(crate) fn get_default_character(&self) -> char {
-        self.default_character
-    }
-
-    pub(crate) fn set_text(&mut self, val: &str) {
-        self.text = val
-            .replace("\r\n", "\n")
-            .split('\n')
-            .map(|s| s.to_string().chars().collect())
-            .collect();
-        self.update();
-    }
-
-    pub(crate) fn get_text(&self) -> String {
-        self.text
-            .iter()
-            .map(|val| val.iter().collect())
-            .collect::<Vec<String>>()
-            .join("\n")
-    }
-
-    pub(crate) fn set_pattern(&mut self, val: &str) {
-        self.pattern = val
-            .replace("\r\n", "\n")
-            .split('\n')
-            .map(|s| s.to_string().chars().collect())
-            .collect();
-        self.update();
-    }
-
-    pub(crate) fn get_pattern(&self) -> String {
-        self.pattern
-            .iter()
-            .map(|val| val.iter().collect())
-            .collect::<Vec<String>>()
-            .join("\n")
-    }
-
-    pub(crate) fn set_animation(&mut self, val: &Vec<&str>) {
-        self.animation = val
-            .iter()
-            .map(|val| {
-                val.replace("\r\n", "\n")
-                    .split('\n')
-                    .map(|s| s.to_string().chars().collect())
-                    .collect()
-            })
-            .collect();
-        self.update();
-    }
-
-    pub(crate) fn get_animation(&self) -> Vec<String> {
-        self.animation
-            .iter()
-            .map(|val| {
-                val.iter()
-                    .map(|val| val.iter().collect())
-                    .collect::<Vec<String>>()
-                    .join("\n")
-            })
-            .collect()
-    }
-
-    pub(crate) fn set_current_frame(&mut self, current_animation_frame: i64) {
-        if self.current_animation_frame != current_animation_frame {
-            self.current_animation_frame = current_animation_frame;
-            self.update();
-        }
-    }
-
-    pub(crate) fn shift_current_frame(&mut self, shift_val: i64) {
-        if shift_val != 0 {
-            self.current_animation_frame += shift_val;
-            self.update();
-        }
-    }
-
-    pub(crate) fn get_current_frame(&self) -> i64 {
-        self.current_animation_frame
-    }
-
-    pub(crate) fn set_style(&mut self, style: RendererObjectStyle) {
-        self.style = style;
-        self.update();
-    }
-
-    pub(crate) fn get_style(&self) -> RendererObjectStyle {
-        self.style.clone()
-    }
-
-    pub(crate) fn set_colors(&mut self, mut val: Vec<ColorArea>) {
-        for i in 0..val.len() {
-            val[i].renderer_object_index = i;
-        }
-        self.colors = val;
-        self.update();
-    }
-
-    pub(crate) fn get_colors(&self) -> Vec<ColorArea> {
-        self.colors.clone()
-    }
-
-    pub(crate) fn add_color(&mut self, val: &mut ColorArea) {
-        val.renderer_object_index = self.colors.len();
-        self.colors.push(val.clone());
-        self.update();
-    }
-
-    pub(crate) fn remove_color(&mut self, val: &ColorArea) {
-        self.colors.remove(val.renderer_object_index);
-        self.update();
-    }
-    //end of getters/setters
 
     fn calculate_geometry(
         &self,
@@ -376,6 +276,207 @@ impl RendererObjectValue {
         }
 
         (width, height)
+    }
+
+    pub(crate) fn process_geometry(
+        &mut self,
+        renderer_width: i64,
+        renderer_height: i64,
+        parent_width: i64,
+        parent_height: i64,
+        renderer_padding: i64,
+    ) {
+        if renderer_width != self.renderer_width {
+            self.renderer_width = renderer_width;
+            match (&self.x, &self.width) {
+                (
+                    Dimension::VW(_) | Dimension::VH(_) | Dimension::VMin(_) | Dimension::VMax(_),
+                    _,
+                )
+                | (
+                    _,
+                    Dimension::VW(_) | Dimension::VH(_) | Dimension::VMin(_) | Dimension::VMax(_),
+                ) => self.update_size = true,
+                _ => (),
+            }
+        }
+
+        if renderer_height != self.renderer_height {
+            self.renderer_height = renderer_height;
+            match (&self.y, &self.height) {
+                (
+                    Dimension::VW(_) | Dimension::VH(_) | Dimension::VMin(_) | Dimension::VMax(_),
+                    _,
+                )
+                | (
+                    _,
+                    Dimension::VW(_) | Dimension::VH(_) | Dimension::VMin(_) | Dimension::VMax(_),
+                ) => self.update_size = true,
+                _ => (),
+            }
+        }
+
+        if parent_width != self.parent_width {
+            self.parent_width = parent_width;
+            match (&self.x, &self.width) {
+                (
+                    Dimension::Percent(_)
+                    | Dimension::PW(_)
+                    | Dimension::PH(_)
+                    | Dimension::PMin(_)
+                    | Dimension::PMax(_),
+                    _,
+                )
+                | (
+                    _,
+                    Dimension::Percent(_)
+                    | Dimension::PW(_)
+                    | Dimension::PH(_)
+                    | Dimension::PMin(_)
+                    | Dimension::PMax(_),
+                ) => self.update_size = true,
+                _ => (),
+            }
+        }
+
+        if parent_height != self.parent_height {
+            self.parent_height = parent_height;
+            match (&self.y, &self.height) {
+                (
+                    Dimension::Percent(_)
+                    | Dimension::PW(_)
+                    | Dimension::PH(_)
+                    | Dimension::PMin(_)
+                    | Dimension::PMax(_),
+                    _,
+                )
+                | (
+                    _,
+                    Dimension::Percent(_)
+                    | Dimension::PW(_)
+                    | Dimension::PH(_)
+                    | Dimension::PMin(_)
+                    | Dimension::PMax(_),
+                ) => self.update_size = true,
+                _ => (),
+            }
+        }
+
+        //update children independent on current object
+        if self.update_content {
+            for child_cell in &self.children {
+                let mut child = child_cell.try_write().unwrap();
+                match (child.width, child.height) {
+                    //evil match that selects children with parent-dependent values
+                    (
+                        Dimension::Percent(_)
+                        | Dimension::PW(_)
+                        | Dimension::PH(_)
+                        | Dimension::PMin(_)
+                        | Dimension::PMax(_),
+                        _,
+                    )
+                    | (
+                        _,
+                        Dimension::Percent(_)
+                        | Dimension::PW(_)
+                        | Dimension::PH(_)
+                        | Dimension::PMin(_)
+                        | Dimension::PMax(_),
+                    ) => (),
+                    _ => child.process_geometry(
+                        renderer_width,
+                        renderer_height,
+                        0,
+                        0,
+                        renderer_padding,
+                    ),
+                }
+            }
+        }
+
+        if self.update_content {
+            if self.width == Dimension::Auto || self.height == Dimension::Auto {
+                let (new_width, new_height) = self.calculate_geometry(
+                    parent_width,
+                    parent_height,
+                    renderer_width,
+                    renderer_height,
+                );
+                if (new_width, new_height) != (self.calculated_width, self.calculated_height) {
+                    (self.calculated_width, self.calculated_height) = (new_width, new_height);
+                    self.update_size = true;
+                }
+            }
+        }
+
+        if self.update_size {
+            self.update_content = true;
+            // skip guessing the geometry if either is Dimension::Auto
+            // since it's calculated earlier in check_for_size_changes
+            if self.width != Dimension::Auto && self.height != Dimension::Auto {
+                (self.calculated_width, self.calculated_height) = self.calculate_geometry(
+                    self.parent_width,
+                    self.parent_height,
+                    self.renderer_width,
+                    self.renderer_height,
+                );
+            }
+            let width: i64 = (-self.absolute_x + self.renderer_width)
+                .min(self.calculated_width)
+                .max(0)
+                - (-self.absolute_x).min(self.calculated_width).max(0)
+                + 2 * renderer_padding;
+            let height: i64 = (-self.absolute_y + self.renderer_height)
+                .min(self.calculated_height)
+                .max(0)
+                - (-self.absolute_y).min(self.calculated_height).max(0)
+                + 2 * renderer_padding;
+            self.buffer = vec::from_elem(
+                vec::from_elem(
+                    Pixel {
+                        value: ' ',
+                        background: self.default_background_color,
+                        foreground: self.default_foreground_color,
+                    },
+                    width as usize,
+                ),
+                height as usize,
+            );
+            self.update_size = false;
+        }
+
+        //update children dependent on current object
+        if self.update_content {
+            for child_cell in &self.children {
+                let mut child = child_cell.try_write().unwrap();
+                match (child.width, child.height) {
+                    (
+                        Dimension::Percent(_)
+                        | Dimension::PW(_)
+                        | Dimension::PH(_)
+                        | Dimension::PMin(_)
+                        | Dimension::PMax(_),
+                        _,
+                    )
+                    | (
+                        _,
+                        Dimension::Percent(_)
+                        | Dimension::PW(_)
+                        | Dimension::PH(_)
+                        | Dimension::PMin(_)
+                        | Dimension::PMax(_),
+                    ) => child.process_geometry(
+                        renderer_width,
+                        renderer_height,
+                        self.calculated_width,
+                        self.calculated_height,
+                        renderer_padding,
+                    ),
+                    _ => (),
+                }
+            }
+        }
     }
 
     fn draw_text(&mut self, renderer_padding: i64) {
@@ -639,7 +740,7 @@ impl RendererObjectValue {
                 Some(val) => val,
                 None => self.style.internal_alignment_y,
             } {
-                AlignmentY::Top => 0, //IDK why, but child positioning is whack if this ain't 1
+                AlignmentY::Top => 0,
                 AlignmentY::Center => self.calculated_height / 2 - child_height as i64 / 2,
                 AlignmentY::Bottom => self.calculated_height - child_height as i64,
             };
@@ -766,207 +867,6 @@ impl RendererObjectValue {
         }
     }
 
-    pub(crate) fn process_geometry(
-        &mut self,
-        renderer_width: i64,
-        renderer_height: i64,
-        parent_width: i64,
-        parent_height: i64,
-        renderer_padding: i64,
-    ) {
-        if renderer_width != self.renderer_width {
-            self.renderer_width = renderer_width;
-            match (&self.x, &self.width) {
-                (
-                    Dimension::VW(_) | Dimension::VH(_) | Dimension::VMin(_) | Dimension::VMax(_),
-                    _,
-                )
-                | (
-                    _,
-                    Dimension::VW(_) | Dimension::VH(_) | Dimension::VMin(_) | Dimension::VMax(_),
-                ) => self.update_size = true,
-                _ => (),
-            }
-        }
-
-        if renderer_height != self.renderer_height {
-            self.renderer_height = renderer_height;
-            match (&self.y, &self.height) {
-                (
-                    Dimension::VW(_) | Dimension::VH(_) | Dimension::VMin(_) | Dimension::VMax(_),
-                    _,
-                )
-                | (
-                    _,
-                    Dimension::VW(_) | Dimension::VH(_) | Dimension::VMin(_) | Dimension::VMax(_),
-                ) => self.update_size = true,
-                _ => (),
-            }
-        }
-
-        if parent_width != self.parent_width {
-            self.parent_width = parent_width;
-            match (&self.x, &self.width) {
-                (
-                    Dimension::Percent(_)
-                    | Dimension::PW(_)
-                    | Dimension::PH(_)
-                    | Dimension::PMin(_)
-                    | Dimension::PMax(_),
-                    _,
-                )
-                | (
-                    _,
-                    Dimension::Percent(_)
-                    | Dimension::PW(_)
-                    | Dimension::PH(_)
-                    | Dimension::PMin(_)
-                    | Dimension::PMax(_),
-                ) => self.update_size = true,
-                _ => (),
-            }
-        }
-
-        if parent_height != self.parent_height {
-            self.parent_height = parent_height;
-            match (&self.y, &self.height) {
-                (
-                    Dimension::Percent(_)
-                    | Dimension::PW(_)
-                    | Dimension::PH(_)
-                    | Dimension::PMin(_)
-                    | Dimension::PMax(_),
-                    _,
-                )
-                | (
-                    _,
-                    Dimension::Percent(_)
-                    | Dimension::PW(_)
-                    | Dimension::PH(_)
-                    | Dimension::PMin(_)
-                    | Dimension::PMax(_),
-                ) => self.update_size = true,
-                _ => (),
-            }
-        }
-
-        //update children independent on current object
-        if self.update_content {
-            for child_cell in &self.children {
-                let mut child = child_cell.try_write().unwrap();
-                match (child.width, child.height) {
-                    //evil match that selects children with parent-dependent values
-                    (
-                        Dimension::Percent(_)
-                        | Dimension::PW(_)
-                        | Dimension::PH(_)
-                        | Dimension::PMin(_)
-                        | Dimension::PMax(_),
-                        _,
-                    )
-                    | (
-                        _,
-                        Dimension::Percent(_)
-                        | Dimension::PW(_)
-                        | Dimension::PH(_)
-                        | Dimension::PMin(_)
-                        | Dimension::PMax(_),
-                    ) => (),
-                    _ => child.process_geometry(
-                        renderer_width,
-                        renderer_height,
-                        0,
-                        0,
-                        renderer_padding,
-                    ),
-                }
-            }
-        }
-
-        if self.update_content {
-            if self.width == Dimension::Auto || self.height == Dimension::Auto {
-                let (new_width, new_height) = self.calculate_geometry(
-                    parent_width,
-                    parent_height,
-                    renderer_width,
-                    renderer_height,
-                );
-                if (new_width, new_height) != (self.calculated_width, self.calculated_height) {
-                    (self.calculated_width, self.calculated_height) = (new_width, new_height);
-                    self.update_size = true;
-                }
-            }
-        }
-
-        if self.update_size {
-            self.update_content = true;
-            // skip guessing the geometry if either is Dimension::Auto
-            // since it's calculated earlier in check_for_size_changes
-            if self.width != Dimension::Auto && self.height != Dimension::Auto {
-                (self.calculated_width, self.calculated_height) = self.calculate_geometry(
-                    self.parent_width,
-                    self.parent_height,
-                    self.renderer_width,
-                    self.renderer_height,
-                );
-            }
-            let width: i64 = (-self.absolute_x + self.renderer_width)
-                .min(self.calculated_width)
-                .max(0)
-                - (-self.absolute_x).min(self.calculated_width).max(0)
-                + 2 * renderer_padding;
-            let height: i64 = (-self.absolute_y + self.renderer_height)
-                .min(self.calculated_height)
-                .max(0)
-                - (-self.absolute_y).min(self.calculated_height).max(0)
-                + 2 * renderer_padding;
-            self.buffer = vec::from_elem(
-                vec::from_elem(
-                    Pixel {
-                        value: ' ',
-                        background: self.default_background_color,
-                        foreground: self.default_foreground_color,
-                    },
-                    width as usize,
-                ),
-                height as usize,
-            );
-            self.update_size = false;
-        }
-
-        //update children dependent on current object
-        if self.update_content {
-            for child_cell in &self.children {
-                let mut child = child_cell.try_write().unwrap();
-                match (child.width, child.height) {
-                    (
-                        Dimension::Percent(_)
-                        | Dimension::PW(_)
-                        | Dimension::PH(_)
-                        | Dimension::PMin(_)
-                        | Dimension::PMax(_),
-                        _,
-                    )
-                    | (
-                        _,
-                        Dimension::Percent(_)
-                        | Dimension::PW(_)
-                        | Dimension::PH(_)
-                        | Dimension::PMin(_)
-                        | Dimension::PMax(_),
-                    ) => child.process_geometry(
-                        renderer_width,
-                        renderer_height,
-                        self.calculated_width,
-                        self.calculated_height,
-                        renderer_padding,
-                    ),
-                    _ => (),
-                }
-            }
-        }
-    }
-
     pub(crate) fn get_buffer(
         &mut self,
         absolute_x: i64,
@@ -1017,20 +917,6 @@ impl RendererObjectValue {
     pub(crate) fn update(&mut self) {
         if !self.update_content {
             self.update_content = true;
-            self.update_parent();
-        }
-    }
-
-    pub(crate) fn update_parent(&self) {
-        if self.parent.is_some() {
-            let parent_ref = self.parent.as_ref().unwrap().upgrade();
-            if parent_ref.is_some() {
-                let parent_rc = &parent_ref.unwrap();
-                let mut parent = parent_rc.try_write().unwrap();
-                if !parent.update_content {
-                    parent.update();
-                }
-            }
         }
     }
 }

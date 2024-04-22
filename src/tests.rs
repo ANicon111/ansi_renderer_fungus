@@ -167,9 +167,6 @@ mod tests {
     fn renderer_test() {
         //show the results of the other tests first
         thread::sleep(Duration::from_secs(1));
-        for _ in 0..terminal_size().unwrap().1 .0 {
-            io::stdout().write("\n".as_bytes()).unwrap();
-        }
         let mut renderer = Renderer::new();
         let water_color = Colors::DARK_SLATE_BLUE.with_luminosity(0.1).with_alpha(0.7);
 
@@ -332,7 +329,7 @@ mod tests {
             *ColorArea::new(Colors::DARK_GOLDENROD, ColorLayer::Foreground)
                 .set_geometry(Dimensions::pixel(-10, 0, 5, 1)),
         ]);
-        title.set_children(&vec![moon.clone()]);
+        title.set_children(vec![moon.clone()]);
 
         let mut root = RendererObject::new();
         root.set_pattern(include_str!("test_assets/stars.txt"));
@@ -385,72 +382,76 @@ mod tests {
                 Dimension::Pixel(3),
             )),
         ]);
-        root.set_children(&mut vec![
-            boat_left.clone(),
-            boat_right.clone(),
-            waves.clone(),
-            title.clone(),
-        ]);
+        root.set_children(vec![boat_left.clone(), boat_right.clone(), waves.clone()]);
+        root.add_child(title.clone());
 
-        renderer.set_object(Some(&root));
+        renderer.set_object(Some(root.clone()));
 
-        let mut frame_count = 0;
-
-        let mut previous_frame_count = 0;
-        let mut min_frames_per_second = i64::MAX;
-        let mut max_frames_per_second = 0;
-
-        let mut previous_frame_count_fourth = 0;
-        let mut min_frames_per_fourth = i64::MAX;
-        let mut max_frames_per_fourth = 0;
-
-        let mut first_frame = true;
-        let mut first_frame_time = Duration::ZERO;
-        let mut min_frame_time = Duration::MAX;
-        let mut max_frame_time = Duration::ZERO;
-
-        let mut time_step = Instant::now();
-
-        renderer.disable_output = false;
-        for _second in 0..10 {
-            for _quarter_second in 0..4 {
-                while Instant::now().duration_since(time_step) < Duration::from_millis(250) {
-                    let start_time = Instant::now();
-                    renderer.draw(false);
-                    let end_time = Instant::now();
-                    let frame_time = end_time - start_time;
-                    if first_frame {
-                        first_frame = false;
-                        first_frame_time = frame_time;
-                    } else {
-                        min_frame_time = min_frame_time.min(frame_time);
-                        max_frame_time = max_frame_time.max(frame_time);
-                    }
-                    frame_count += 1;
-                    moon.set_current_frame(frame_count % 200);
-                    boat_left.set_x(Dimension::PW(-(frame_count % 200) as f64 + 50.0));
-                    boat_right.set_x(Dimension::PW((frame_count % 200) as f64 - 50.0));
-                    waves.set_x(Dimension::PW(
-                        ((200 - frame_count % 400) as f64).abs() / 2.0,
-                    ));
-                }
-                time_step = Instant::now();
-                min_frames_per_fourth =
-                    min_frames_per_fourth.min(frame_count - previous_frame_count_fourth);
-                max_frames_per_fourth =
-                    max_frames_per_fourth.max(frame_count - previous_frame_count_fourth);
-                previous_frame_count_fourth = frame_count;
+        {
+            for _ in 0..terminal_size().unwrap().1 .0 {
+                io::stdout().write("\n".as_bytes()).unwrap();
             }
-            min_frames_per_second = min_frames_per_second.min(frame_count - previous_frame_count);
-            max_frames_per_second = max_frames_per_second.max(frame_count - previous_frame_count);
-            previous_frame_count = frame_count;
-        }
+            let mut frame_count = 0;
 
-        io::stdout()
-            .write_all(
-                format!(
-                    "
-Frames rendered in 10 seconds: {}        
+            let mut previous_frame_count = 0;
+            let mut min_frames_per_second = i64::MAX;
+            let mut max_frames_per_second = 0;
+
+            let mut previous_frame_count_fourth = 0;
+            let mut min_frames_per_fourth = i64::MAX;
+            let mut max_frames_per_fourth = 0;
+
+            let mut first_frame = true;
+            let mut first_frame_time = Duration::ZERO;
+            let mut min_frame_time = Duration::MAX;
+            let mut max_frame_time = Duration::ZERO;
+
+            let mut time_step = Instant::now();
+
+            renderer.disable_output = false;
+            for _second in 0..5 {
+                for _quarter_second in 0..4 {
+                    while Instant::now().duration_since(time_step) < Duration::from_millis(250) {
+                        let start_time = Instant::now();
+                        renderer.draw(false);
+                        let end_time = Instant::now();
+                        let frame_time = end_time - start_time;
+                        if first_frame {
+                            first_frame = false;
+                            first_frame_time = frame_time;
+                        } else {
+                            min_frame_time = min_frame_time.min(frame_time);
+                            max_frame_time = max_frame_time.max(frame_time);
+                        }
+                        frame_count += 1;
+                        moon.set_current_frame(frame_count % 200);
+                        boat_left.set_x(Dimension::PW(-(frame_count % 200) as f64 + 50.0));
+                        boat_right.set_x(Dimension::PW((frame_count % 200) as f64 - 50.0));
+                        waves.set_x(Dimension::PW(
+                            ((200 - frame_count % 400) as f64).abs() / 2.0,
+                        ));
+                    }
+                    time_step = Instant::now();
+                    min_frames_per_fourth =
+                        min_frames_per_fourth.min(frame_count - previous_frame_count_fourth);
+                    max_frames_per_fourth =
+                        max_frames_per_fourth.max(frame_count - previous_frame_count_fourth);
+                    previous_frame_count_fourth = frame_count;
+                }
+                min_frames_per_second =
+                    min_frames_per_second.min(frame_count - previous_frame_count);
+                max_frames_per_second =
+                    max_frames_per_second.max(frame_count - previous_frame_count);
+                previous_frame_count = frame_count;
+            }
+
+            io::stdout()
+                .write_all(
+                    format!(
+                        "
+Sync running results:
+
+Frames rendered in 5 seconds: {}        
 Minimum frames per 1/4s: {}
 Maximum frames per 1/4s: {}
 Minimum frames per 1s: {}
@@ -459,17 +460,73 @@ First frame time: {:?}
 Minimum frame time: {:?}
 Maximum frame time: {:?}
 ",
-                    frame_count,
-                    min_frames_per_fourth,
-                    max_frames_per_fourth,
-                    min_frames_per_second,
-                    max_frames_per_second,
-                    first_frame_time,
-                    min_frame_time,
-                    max_frame_time
+                        frame_count,
+                        min_frames_per_fourth,
+                        max_frames_per_fourth,
+                        min_frames_per_second,
+                        max_frames_per_second,
+                        first_frame_time,
+                        min_frame_time,
+                        max_frame_time
+                    )
+                    .as_bytes(),
                 )
-                .as_bytes(),
-            )
-            .unwrap();
+                .unwrap();
+        }
+
+        thread::sleep(Duration::from_secs(2));
+
+        {
+            for _ in 0..terminal_size().unwrap().1 .0 {
+                io::stdout().write("\n".as_bytes()).unwrap();
+            }
+            let mut frame_count = 0;
+
+            let start_time = Instant::now();
+
+            renderer.disable_output = false;
+            let running_renderer = renderer._debug_run();
+
+            while start_time.elapsed() < Duration::from_secs(5) {
+                frame_count += 1;
+                moon.set_current_frame(frame_count % 200);
+                boat_left.set_x(Dimension::PW(-(frame_count % 200) as f64 + 50.0));
+                boat_right.set_x(Dimension::PW((frame_count % 200) as f64 - 50.0));
+                waves.set_x(Dimension::PW(
+                    ((200 - frame_count % 400) as f64).abs() / 2.0,
+                ));
+
+                thread::sleep(Duration::from_millis(8))
+            }
+
+            let results = running_renderer._stop();
+
+            io::stdout()
+                .write_all(
+                    format!(
+                        "
+Threaded rendering with 120fps physics:
+Frames rendered in 5 seconds: {}        
+Minimum frames per 1/4s: {}
+Maximum frames per 1/4s: {}
+Minimum frames per 1s: {}
+Maximum frames per 1s: {}
+First frame time: {:?}
+Minimum frame time: {:?}
+Maximum frame time: {:?}
+",
+                        results.frame_count,
+                        results.min_frames_per_fourth,
+                        results.max_frames_per_fourth,
+                        results.min_frames_per_second,
+                        results.max_frames_per_second,
+                        results.first_frame_time,
+                        results.min_frame_time,
+                        results.max_frame_time,
+                    )
+                    .as_bytes(),
+                )
+                .unwrap();
+        }
     }
 }

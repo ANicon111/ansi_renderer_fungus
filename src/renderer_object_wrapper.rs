@@ -1,222 +1,248 @@
 use std::sync::{Arc, RwLock};
 
 use crate::{
-    color::Color, color_area::ColorArea, colors::Colors, geometry::Dimension, pixel::Pixel,
+    color::Color, color_area::ColorArea, colors::Colors, geometry::Dimension,
     renderer_object_style::RendererObjectStyle, renderer_object_value::RendererObjectValue,
 };
 
 #[derive(Clone)]
 pub struct RendererObject {
-    value: Arc<RwLock<RendererObjectValue>>,
+    pub(crate) value: Arc<RwLock<RendererObjectValue>>,
+    new_value: Arc<RwLock<RendererObjectValue>>,
 }
 
 impl RendererObject {
     //getters and setters
     pub fn set_x(&mut self, x: Dimension) -> &mut Self {
-        self.value.try_write().unwrap().set_x(x);
+        self.new_value.write().unwrap().x = x;
         self
     }
 
     pub fn get_x(&self) -> Dimension {
-        self.value.try_read().unwrap().get_x()
+        self.new_value.read().unwrap().x
     }
 
     pub fn set_y(&mut self, y: Dimension) -> &mut Self {
-        self.value.try_write().unwrap().set_y(y);
+        self.new_value.write().unwrap().y = y;
         self
     }
 
     pub fn get_y(&self) -> Dimension {
-        self.value.try_read().unwrap().get_y()
+        self.new_value.read().unwrap().y
     }
 
     pub fn set_width(&mut self, width: Dimension) -> &mut Self {
-        self.value.try_write().unwrap().set_width(width);
+        self.new_value.write().unwrap().width = width;
         self
     }
 
     pub fn get_width(&self) -> Dimension {
-        self.value.try_read().unwrap().get_width()
-    }
-
-    pub fn get_calculated_width(&self) -> i64 {
-        self.value.try_read().unwrap().calculated_width
+        self.new_value.read().unwrap().width
     }
 
     pub fn set_height(&mut self, height: Dimension) -> &mut Self {
-        self.value.try_write().unwrap().set_height(height);
+        self.new_value.write().unwrap().height = height;
         self
     }
 
     pub fn get_height(&self) -> Dimension {
-        self.value.try_read().unwrap().get_height()
-    }
-
-    pub fn get_calculated_height(&self) -> i64 {
-        self.value.try_read().unwrap().calculated_height
+        self.new_value.read().unwrap().height
     }
 
     pub fn set_geometry(
         &mut self,
         (x, y, width, height): (Dimension, Dimension, Dimension, Dimension),
     ) -> &mut Self {
-        self.value
-            .try_write()
-            .unwrap()
-            .set_geometry((x, y, width, height));
+        {
+            let mut val = self.new_value.write().unwrap();
+
+            (val.x, val.y, val.width, val.height) = (x, y, width, height);
+        }
         self
     }
 
     pub fn get_geometry(&self) -> (Dimension, Dimension, Dimension, Dimension) {
-        self.value.try_read().unwrap().get_geometry()
+        let val = self.new_value.read().unwrap();
+        (val.x, val.y, val.width, val.height)
     }
 
     pub fn set_default_background_color(&mut self, color: Color) -> &mut Self {
-        self.value
-            .try_write()
-            .unwrap()
-            .set_default_background_color(color);
+        self.new_value.write().unwrap().default_background_color = color;
         self
     }
 
     pub fn get_default_background_color(&self) -> Color {
-        self.value
-            .try_read()
-            .unwrap()
-            .get_default_background_color()
+        self.new_value.read().unwrap().default_background_color
     }
 
     pub fn set_default_foreground_color(&mut self, color: Color) -> &mut Self {
-        self.value
-            .try_write()
-            .unwrap()
-            .set_default_foreground_color(color);
+        self.new_value.write().unwrap().default_foreground_color = color;
         self
     }
 
     pub fn get_default_foreground_color(&self) -> Color {
-        self.value
-            .try_read()
-            .unwrap()
-            .get_default_foreground_color()
+        self.new_value.read().unwrap().default_foreground_color
     }
 
     pub fn set_default_character(&mut self, character: char) -> &mut Self {
-        self.value
-            .try_write()
-            .unwrap()
-            .set_default_character(character);
+        self.new_value.write().unwrap().default_character = character;
         self
     }
 
     pub fn get_default_character(&self) -> char {
-        self.value.try_read().unwrap().get_default_character()
+        self.new_value.read().unwrap().default_character
     }
 
     pub fn set_text(&mut self, text: &str) -> &mut Self {
-        self.value.try_write().unwrap().set_text(text);
+        {
+            let mut val = self.new_value.write().unwrap();
+            val.text = text
+                .replace("\r\n", "\n")
+                .split('\n')
+                .map(|s| s.to_string().chars().collect())
+                .collect();
+            val.changed_text = true;
+        }
         self
     }
 
     pub fn get_text(&self) -> String {
-        self.value.try_read().unwrap().get_text()
+        self.new_value
+            .read()
+            .unwrap()
+            .text
+            .iter()
+            .map(|val| val.iter().collect())
+            .collect::<Vec<String>>()
+            .join("\n")
     }
 
     pub fn set_pattern(&mut self, pattern: &str) -> &mut Self {
-        self.value.try_write().unwrap().set_pattern(pattern);
+        {
+            let mut val = self.new_value.write().unwrap();
+            val.pattern = pattern
+                .replace("\r\n", "\n")
+                .split('\n')
+                .map(|s| s.to_string().chars().collect())
+                .collect();
+            val.changed_pattern = true;
+        }
         self
     }
 
     pub fn get_pattern(&self) -> String {
-        self.value.try_read().unwrap().get_pattern()
+        self.new_value
+            .read()
+            .unwrap()
+            .pattern
+            .iter()
+            .map(|val| val.iter().collect())
+            .collect::<Vec<String>>()
+            .join("\n")
     }
 
     pub fn set_animation(&mut self, animation: &Vec<&str>) -> &mut Self {
-        self.value.try_write().unwrap().set_animation(animation);
+        {
+            let mut val = self.new_value.write().unwrap();
+            val.animation = animation
+                .iter()
+                .map(|text| {
+                    text.replace("\r\n", "\n")
+                        .split('\n')
+                        .map(|s| s.to_string().chars().collect())
+                        .collect()
+                })
+                .collect();
+            val.changed_animation = true;
+        }
         self
     }
 
     pub fn get_animation(&self) -> Vec<String> {
-        self.value.try_read().unwrap().get_animation()
+        self.new_value
+            .read()
+            .unwrap()
+            .animation
+            .iter()
+            .map(|val| {
+                val.iter()
+                    .map(|val| val.iter().collect())
+                    .collect::<Vec<String>>()
+                    .join("\n")
+            })
+            .collect()
     }
 
     pub fn set_current_frame(&mut self, frame: i64) -> &mut Self {
-        self.value.try_write().unwrap().set_current_frame(frame);
+        self.new_value.write().unwrap().current_animation_frame = frame;
         self
     }
 
     pub fn shift_current_frame(&mut self, shift_val: i64) -> &mut Self {
-        self.value
-            .try_write()
-            .unwrap()
-            .shift_current_frame(shift_val);
+        self.new_value.write().unwrap().current_animation_frame += shift_val;
         self
     }
 
     pub fn get_current_frame(&self) -> i64 {
-        self.value.try_read().unwrap().get_current_frame()
+        self.new_value.read().unwrap().current_animation_frame
     }
 
     pub fn set_style(&mut self, style: RendererObjectStyle) -> &mut Self {
-        self.value.try_write().unwrap().set_style(style);
+        {
+            let mut val = self.new_value.write().unwrap();
+            val.style = style;
+            val.changed_style = true;
+        }
         self
     }
 
     pub fn get_style(&self) -> RendererObjectStyle {
-        self.value.try_read().unwrap().get_style()
+        self.new_value.read().unwrap().style.clone()
     }
 
     pub fn set_colors(&mut self, colors: Vec<ColorArea>) -> &mut Self {
-        self.value.try_write().unwrap().set_colors(colors);
+        {
+            let mut val = self.new_value.write().unwrap();
+            val.colors = colors;
+            val.changed_colors = true;
+        }
         self
     }
 
     pub fn get_colors(&self) -> Vec<ColorArea> {
-        self.value.try_read().unwrap().get_colors()
+        self.new_value.read().unwrap().colors.clone()
     }
 
     pub fn add_color(&mut self, color: &mut ColorArea) -> &mut Self {
-        self.value.try_write().unwrap().add_color(color);
+        {
+            let mut val = self.new_value.write().unwrap();
+            color.renderer_object_index = val.colors.len();
+            val.colors.push(color.clone());
+            val.changed_colors = true;
+        }
         self
     }
 
     pub fn remove_color(&mut self, color: &ColorArea) -> &mut Self {
-        self.value.try_write().unwrap().remove_color(color);
+        self.remove_color_at(color.renderer_object_index);
         self
     }
 
-    pub fn process_geometry(
-        &mut self,
-        renderer_width: i64,
-        renderer_height: i64,
-        parent_width: i64,
-        parent_height: i64,
-        renderer_padding: i64,
-    ) {
-        self.value.try_write().unwrap().process_geometry(
-            renderer_width,
-            renderer_height,
-            parent_width,
-            parent_height,
-            renderer_padding,
-        );
-    }
-
-    pub fn get_buffer(
-        &mut self,
-        absolute_x: i64,
-        absolute_y: i64,
-        renderer_padding: i64,
-    ) -> Vec<Vec<Pixel>> {
-        self.value
-            .try_write()
-            .unwrap()
-            .get_buffer(absolute_x, absolute_y, renderer_padding)
-            .clone()
+    pub fn remove_color_at(&mut self, index: usize) -> &mut Self {
+        {
+            let mut val = self.new_value.write().unwrap();
+            val.colors.remove(index);
+            for i in 0..val.colors.len() {
+                val.colors[i].renderer_object_index = i;
+            }
+            val.changed_colors = true;
+        }
+        self
     }
     //end of getters/setters
+
     pub fn new() -> RendererObject {
-        let renderer_object_value = RendererObjectValue {
+        let mut renderer_object_value = RendererObjectValue {
             buffer: Vec::new(),
             x: Dimension::Auto,
             y: Dimension::Auto,
@@ -236,65 +262,81 @@ impl RendererObject {
             parent_location: 0,
             default_character: '\0',
             text: Vec::new(),
+            changed_text: false,
             pattern: Vec::new(),
+            changed_pattern: false,
             animation: Vec::new(),
+            changed_animation: false,
             current_animation_frame: 0,
             colors: Vec::new(),
+            changed_colors: false,
             default_background_color: Colors::TRANSPARENT,
             default_foreground_color: Colors::WHITE,
             children: Vec::new(),
+            changed_children: false,
             style: RendererObjectStyle::new(),
+            changed_style: false,
+            new_self: None,
         };
+        renderer_object_value.new_self = Some(Arc::new(RwLock::new(renderer_object_value.clone())));
 
         RendererObject {
-            value: Arc::new_cyclic(|_| RwLock::new(renderer_object_value)),
+            new_value: renderer_object_value.new_self.clone().unwrap(),
+            value: Arc::new(RwLock::new(renderer_object_value)),
         }
     }
 
-    pub fn add_child(&mut self, child: &RendererObject) {
-        let mut current_value = self.value.try_write().unwrap();
-        let mut child_value = child.value.try_write().unwrap();
-        child_value.parent = Some(Arc::downgrade(&self.value.clone()));
-        child_value.parent_location = current_value.children.len();
-
-        current_value.children.push(child.value.clone());
-
-        current_value.update();
-    }
-
-    pub fn set_children(&mut self, children: &Vec<RendererObject>) {
-        let mut current_value = self.value.try_write().unwrap();
-        current_value.children = children.iter().map(|val| val.value.clone()).collect();
-        let children = current_value.children.clone();
+    pub fn set_children(&mut self, children: Vec<RendererObject>) {
+        let mut current_value = self.new_value.write().unwrap();
         for i in 0..children.len() {
-            children[i].try_write().unwrap().parent_location = i;
-            children[i].try_write().unwrap().parent = Some(Arc::downgrade(&self.value.clone()));
+            {
+                let rw_lock = &children[i].new_value;
+                let mut child = rw_lock.write().unwrap();
+                child.parent_location = i;
+                child.parent = Some(Arc::downgrade(&self.value.clone()));
+            }
+            current_value.children.push(children[i].value.clone());
         }
-        current_value.update();
+        current_value.changed_children = true;
     }
 
     pub fn get_children(&self) -> Vec<RendererObject> {
-        self.value
-            .try_read()
+        self.new_value
+            .read()
             .unwrap()
             .children
             .iter()
-            .map(|val| RendererObject { value: val.clone() })
+            .map(|val| RendererObject {
+                value: val.clone(),
+                new_value: val.read().unwrap().new_self.clone().unwrap(),
+            })
             .collect()
     }
 
-    pub fn remove_child(&mut self, renderer_object: &RendererObject) {
-        self.value
-            .try_write()
-            .unwrap()
-            .children
-            .remove(renderer_object.value.try_read().unwrap().parent_location);
+    pub fn add_child(&mut self, child: RendererObject) {
+        let mut current_value = self.new_value.write().unwrap();
+        {
+            let mut child_value = child.value.write().unwrap();
+            child_value.parent = Some(Arc::downgrade(&self.value.clone()));
+            child_value.parent_location = current_value.children.len();
+        }
+        current_value.children.push(child.value);
+        current_value.changed_children = true;
+    }
 
-        let children = self.value.try_write().unwrap().children.clone();
+    pub fn remove_child(&mut self, renderer_object: &RendererObject) {
+        self.remove_child_at(renderer_object.value.read().unwrap().parent_location);
+    }
+
+    pub fn remove_child_at(&mut self, index: usize) {
+        let mut val = self.new_value.write().unwrap();
+        val.children.remove(index);
+
+        let children = val.children.clone();
         for i in 0..children.len() {
-            children[i].try_write().unwrap().parent_location = i;
+            children[i].write().unwrap().parent_location = i;
         }
 
-        self.value.try_write().unwrap().update();
+        val.changed_children = true;
     }
 }

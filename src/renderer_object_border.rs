@@ -145,7 +145,7 @@ impl Borders {
     };
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Border {
     pub top_left: Pixel,
     pub top: Pixel,
