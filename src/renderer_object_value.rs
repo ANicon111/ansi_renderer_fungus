@@ -1,6 +1,5 @@
 use std::{
-    cell::RefCell,
-    rc::{Rc, Weak},
+    sync::{Arc, RwLock, Weak},
     vec,
 };
 
@@ -12,6 +11,7 @@ use crate::{
     pixel::Pixel,
     renderer_object_style::{AlignmentX, AlignmentY, RendererObjectStyle},
 };
+#[derive(Clone)]
 pub(crate) struct RendererObjectValue {
     pub(crate) buffer: Vec<Vec<Pixel>>,
 
@@ -48,11 +48,11 @@ pub(crate) struct RendererObjectValue {
     pub(crate) default_background_color: Color,
     pub(crate) default_foreground_color: Color,
 
-    pub(crate) children: Vec<Rc<RefCell<RendererObjectValue>>>,
+    pub(crate) children: Vec<Arc<RwLock<RendererObjectValue>>>,
 
     pub(crate) style: RendererObjectStyle,
 
-    pub(crate) parent: Option<Weak<RefCell<RendererObjectValue>>>,
+    pub(crate) parent: Option<Weak<RwLock<RendererObjectValue>>>,
     pub(crate) parent_location: usize,
 }
 
@@ -284,7 +284,7 @@ impl RendererObjectValue {
 
         if self.width == Dimension::Auto {
             for child in &self.children {
-                let child_ref: &RendererObjectValue = &RefCell::borrow(child);
+                let child_ref = child.try_read().unwrap();
                 match (&child_ref.x, &child_ref.width) {
                     //supported dimension types
                     (
@@ -302,7 +302,7 @@ impl RendererObjectValue {
                         | Dimension::VMax(_),
                     ) => {
                         width = width.max(
-                            child.borrow().calculated_width
+                            child_ref.calculated_width
                                 + generic_dimension_calc(
                                     &child_ref.x,
                                     0,
@@ -337,7 +337,7 @@ impl RendererObjectValue {
 
         if self.height == Dimension::Auto {
             for child in &self.children {
-                let child_ref = RefCell::borrow(child);
+                let child_ref = child.try_read().unwrap();
                 match (&child_ref.y, &child_ref.height) {
                     //supported dimension types
                     (
@@ -355,7 +355,7 @@ impl RendererObjectValue {
                         | Dimension::VMax(_),
                     ) => {
                         height = height.max(
-                            child.borrow().calculated_height
+                            child_ref.calculated_height
                                 + generic_dimension_calc(
                                     &child_ref.y,
                                     0,
@@ -604,7 +604,7 @@ impl RendererObjectValue {
             .max(0);
 
         for child_cell in &self.children {
-            let mut child = child_cell.borrow_mut();
+            let mut child = child_cell.try_write().unwrap();
             let child_x = generic_dimension_calc(
                 &child.x,
                 self.calculated_width,
@@ -853,7 +853,7 @@ impl RendererObjectValue {
         //update children independent on current object
         if self.update_content {
             for child_cell in &self.children {
-                let mut child = child_cell.borrow_mut();
+                let mut child = child_cell.try_write().unwrap();
                 match (child.width, child.height) {
                     //evil match that selects children with parent-dependent values
                     (
@@ -937,7 +937,7 @@ impl RendererObjectValue {
         //update children dependent on current object
         if self.update_content {
             for child_cell in &self.children {
-                let mut child = child_cell.borrow_mut();
+                let mut child = child_cell.try_write().unwrap();
                 match (child.width, child.height) {
                     (
                         Dimension::Percent(_)
@@ -1026,7 +1026,7 @@ impl RendererObjectValue {
             let parent_ref = self.parent.as_ref().unwrap().upgrade();
             if parent_ref.is_some() {
                 let parent_rc = &parent_ref.unwrap();
-                let mut parent = parent_rc.borrow_mut();
+                let mut parent = parent_rc.try_write().unwrap();
                 if !parent.update_content {
                     parent.update();
                 }

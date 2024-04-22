@@ -9,7 +9,7 @@ use crate::{
     colors::Colors,
     misc::{generic_dimension_calc, BufferedConsole},
     pixel::Pixel,
-    renderer_object_style::{AlignmentX, AlignmentY},
+    renderer_object_style::{AlignmentX, AlignmentY, RendererObjectStyle},
     renderer_object_wrapper::RendererObject,
 };
 
@@ -20,6 +20,7 @@ pub struct Renderer {
     padding: i64,
     object: Option<RendererObject>,
     console: BufferedConsole,
+    drawing: bool,
 
     pub disable_output: bool,
 }
@@ -33,6 +34,7 @@ impl Renderer {
             object: None,
             padding: 5,
             console: BufferedConsole::new(),
+            drawing: false,
             disable_output: false,
         }
     }
@@ -65,7 +67,12 @@ impl Renderer {
         self.padding = buffer;
     }
 
+    ///returns the actual frame time
     pub fn draw(&mut self, force_update: bool) {
+        if self.drawing {
+            return;
+        }
+        self.drawing = true;
         if let Some(object) = &mut self.object {
             {
                 let (terminal_width, terminal_height) = match terminal_size() {
@@ -96,7 +103,7 @@ impl Renderer {
                     self.padding,
                 );
 
-                let object_x = generic_dimension_calc(
+                let object_x: i64 = generic_dimension_calc(
                     &object.get_x(),
                     self.width,
                     self.height,
@@ -104,7 +111,7 @@ impl Renderer {
                     self.height,
                     true,
                 );
-                let object_y = generic_dimension_calc(
+                let object_y: i64 = generic_dimension_calc(
                     &object.get_y(),
                     self.width,
                     self.height,
@@ -112,10 +119,10 @@ impl Renderer {
                     self.height,
                     false,
                 );
-                let object_width = object.get_calculated_width();
-                let object_height = object.get_calculated_height();
+                let object_width: i64 = object.get_calculated_width();
+                let object_height: i64 = object.get_calculated_height();
 
-                let style = object.get_style();
+                let style: RendererObjectStyle = object.get_style();
                 let alignment_offset_x: i64 = if let Some(style) = style.external_alignment_x {
                     match style {
                         AlignmentX::Left => 0,
@@ -134,24 +141,24 @@ impl Renderer {
                 } else {
                     0
                 };
-                let current_buffer =
+                let current_buffer: Vec<Vec<Pixel>> =
                     object.get_buffer(alignment_offset_x, alignment_offset_y, self.padding);
 
-                let start_x = (alignment_offset_x + object_x).max(0).min(self.width);
-                let end_x = (alignment_offset_x + object_x + object_width as i64)
+                let start_x: i64 = (alignment_offset_x + object_x).max(0).min(self.width);
+                let end_x: i64 = (alignment_offset_x + object_x + object_width as i64)
                     .max(0)
                     .min(self.width);
-                let start_y = (alignment_offset_y + object_y).max(0).min(self.height);
-                let end_y = (alignment_offset_y + object_y + object_height as i64)
+                let start_y: i64 = (alignment_offset_y + object_y).max(0).min(self.height);
+                let end_y: i64 = (alignment_offset_y + object_y + object_height as i64)
                     .max(0)
                     .min(self.height);
 
-                let mut last_i = -1;
+                let mut last_i: i64 = -1;
                 for i in start_y..end_y {
-                    let mut last_j = -1;
+                    let mut last_j: i64 = -1;
                     for j in start_x..end_x {
-                        let padding = (self.width - terminal_width).max(0).min(self.padding);
-                        let current_pixel = current_buffer[(i - start_y + padding) as usize]
+                        let padding: i64 = (self.width - terminal_width).max(0).min(self.padding);
+                        let current_pixel: Pixel = current_buffer[(i - start_y + padding) as usize]
                             [(j - start_x + padding) as usize]
                             .clone();
                         if self.previous_buffer[i as usize][j as usize] != current_pixel
@@ -176,5 +183,6 @@ impl Renderer {
                 }
             }
         }
+        self.drawing = false;
     }
 }

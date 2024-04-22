@@ -404,13 +404,28 @@ mod tests {
         let mut min_frames_per_fourth = i64::MAX;
         let mut max_frames_per_fourth = 0;
 
+        let mut first_frame = true;
+        let mut first_frame_time = Duration::ZERO;
+        let mut min_frame_time = Duration::MAX;
+        let mut max_frame_time = Duration::ZERO;
+
         let mut time_step = Instant::now();
 
         renderer.disable_output = false;
         for _second in 0..10 {
             for _quarter_second in 0..4 {
                 while Instant::now().duration_since(time_step) < Duration::from_millis(250) {
+                    let start_time = Instant::now();
                     renderer.draw(false);
+                    let end_time = Instant::now();
+                    let frame_time = end_time - start_time;
+                    if first_frame {
+                        first_frame = false;
+                        first_frame_time = frame_time;
+                    } else {
+                        min_frame_time = min_frame_time.min(frame_time);
+                        max_frame_time = max_frame_time.max(frame_time);
+                    }
                     frame_count += 1;
                     moon.set_current_frame(frame_count % 200);
                     boat_left.set_x(Dimension::PW(-(frame_count % 200) as f64 + 50.0));
@@ -440,12 +455,18 @@ Minimum frames per 1/4s: {}
 Maximum frames per 1/4s: {}
 Minimum frames per 1s: {}
 Maximum frames per 1s: {}
+First frame time: {:?}
+Minimum frame time: {:?}
+Maximum frame time: {:?}
 ",
                     frame_count,
                     min_frames_per_fourth,
                     max_frames_per_fourth,
                     min_frames_per_second,
-                    max_frames_per_second
+                    max_frames_per_second,
+                    first_frame_time,
+                    min_frame_time,
+                    max_frame_time
                 )
                 .as_bytes(),
             )
