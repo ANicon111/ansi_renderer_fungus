@@ -48,6 +48,10 @@ pub(crate) struct RendererObjectValue {
     pub(crate) changed_animation: bool,
     pub(crate) current_animation_frame: i64,
 
+    pub(crate) animated_pattern: Vec<Vec<Vec<char>>>,
+    pub(crate) changed_animated_pattern: bool,
+    pub(crate) current_animated_pattern_frame: i64,
+
     pub(crate) colors: Vec<ColorArea>,
     pub(crate) changed_colors: bool,
     pub(crate) default_background_color: Color,
@@ -114,6 +118,17 @@ impl RendererObjectValue {
 
             if self.current_animation_frame != new_self.current_animation_frame {
                 self.current_animation_frame = new_self.current_animation_frame;
+                update = true;
+            }
+
+            if self.current_animated_pattern_frame != new_self.current_animated_pattern_frame {
+                self.current_animated_pattern_frame = new_self.current_animated_pattern_frame;
+                update = true;
+            }
+
+            if new_self.changed_animated_pattern {
+                self.animated_pattern = new_self.animated_pattern.clone();
+                new_self.changed_animated_pattern = false;
                 update = true;
             }
 
@@ -589,6 +604,40 @@ impl RendererObjectValue {
         }
     }
 
+    fn draw_animated_pattern(
+        &mut self,
+        renderer_padding: i64,
+        current_animated_pattern_frame: i64,
+    ) {
+        let start_x: i64 = (-self.absolute_x - renderer_padding)
+            .min(self.calculated_width)
+            .max(0);
+        let end_x: i64 = (-self.absolute_x + renderer_padding + self.renderer_width)
+            .min(self.calculated_width)
+            .max(0);
+        let start_y: i64 = (-self.absolute_y - renderer_padding)
+            .min(self.calculated_height)
+            .max(0);
+        let end_y: i64 = (-self.absolute_y + renderer_padding + self.renderer_height)
+            .min(self.calculated_height)
+            .max(0);
+
+        let frame = &self.animated_pattern
+            [current_animated_pattern_frame as usize % self.animated_pattern.len()];
+
+        for i in start_y..end_y {
+            let chars: &Vec<char> = &frame[i as usize % frame.len()];
+            if chars.len() > 0 {
+                for j in start_x..end_x {
+                    let new_val = chars[j as usize % chars.len()];
+                    if new_val != '\0' {
+                        self.buffer[(i - start_y) as usize][(j - start_x) as usize].value = new_val;
+                    }
+                }
+            }
+        }
+    }
+
     fn draw_colors(&mut self, renderer_padding: i64) {
         let start_x: i64 = (-self.absolute_x - renderer_padding)
             .min(self.calculated_width)
@@ -894,6 +943,10 @@ impl RendererObjectValue {
 
             if self.pattern.len() > 0 {
                 self.draw_pattern(renderer_padding);
+            }
+
+            if self.animated_pattern.len() > 0 {
+                self.draw_animated_pattern(renderer_padding, self.current_animated_pattern_frame);
             }
 
             self.draw_text(renderer_padding);

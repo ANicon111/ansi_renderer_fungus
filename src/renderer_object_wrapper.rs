@@ -158,6 +158,23 @@ impl RendererObject {
         self
     }
 
+    pub fn set_animation_from_string(&mut self, animation: &str) -> &mut Self {
+        {
+            let mut val = self.new_value.write().unwrap();
+            val.animation = animation
+                .replace("\r\n", "\n")
+                .split("\n<FrameSeparator>\n")
+                .map(|text| {
+                    text.split('\n')
+                        .map(|s| s.to_string().chars().collect())
+                        .collect()
+                })
+                .collect();
+            val.changed_animation = true;
+        }
+        self
+    }
+
     pub fn get_animation(&self) -> Vec<String> {
         self.new_value
             .read()
@@ -173,18 +190,106 @@ impl RendererObject {
             .collect()
     }
 
-    pub fn set_current_frame(&mut self, frame: i64) -> &mut Self {
+    pub fn set_animated_pattern(&mut self, animated_pattern: &Vec<&str>) -> &mut Self {
+        {
+            let mut val = self.new_value.write().unwrap();
+            val.animated_pattern = animated_pattern
+                .iter()
+                .map(|text| {
+                    text.replace("\r\n", "\n")
+                        .split('\n')
+                        .map(|s| s.to_string().chars().collect())
+                        .collect()
+                })
+                .collect();
+            val.changed_animated_pattern = true;
+        }
+        self
+    }
+
+    pub fn set_animated_pattern_from_string(&mut self, animated_pattern: &str) -> &mut Self {
+        {
+            let mut val = self.new_value.write().unwrap();
+            val.animated_pattern = animated_pattern
+                .replace("\r\n", "\n")
+                .split("\n<FrameSeparator>\n")
+                .map(|text| {
+                    text.split('\n')
+                        .map(|s| s.to_string().chars().collect())
+                        .collect()
+                })
+                .collect();
+            val.changed_animated_pattern = true;
+        }
+        self
+    }
+
+    pub fn get_animated_pattern(&self) -> Vec<String> {
+        self.new_value
+            .read()
+            .unwrap()
+            .animated_pattern
+            .iter()
+            .map(|val| {
+                val.iter()
+                    .map(|val| val.iter().collect())
+                    .collect::<Vec<String>>()
+                    .join("\n")
+            })
+            .collect()
+    }
+
+    pub fn get_animated_pattern_as_string(&self) -> String {
+        self.new_value
+            .read()
+            .unwrap()
+            .animated_pattern
+            .iter()
+            .map(|val| {
+                val.iter()
+                    .map(|val| val.iter().collect())
+                    .collect::<Vec<String>>()
+                    .join("\n")
+            })
+            .collect::<Vec<String>>()
+            .join("\n<FrameSeparator>\n")
+    }
+
+    pub fn set_current_animation_frame(&mut self, frame: i64) -> &mut Self {
         self.new_value.write().unwrap().current_animation_frame = frame;
         self
     }
 
-    pub fn shift_current_frame(&mut self, shift_val: i64) -> &mut Self {
+    pub fn shift_current_animation_frame(&mut self, shift_val: i64) -> &mut Self {
         self.new_value.write().unwrap().current_animation_frame += shift_val;
         self
     }
 
-    pub fn get_current_frame(&self) -> i64 {
+    pub fn get_current_animation_frame(&self) -> i64 {
         self.new_value.read().unwrap().current_animation_frame
+    }
+
+    pub fn set_current_animated_pattern_frame(&mut self, frame: i64) -> &mut Self {
+        self.new_value
+            .write()
+            .unwrap()
+            .current_animated_pattern_frame = frame;
+        self
+    }
+
+    pub fn shift_current_animated_pattern_frame(&mut self, shift_val: i64) -> &mut Self {
+        self.new_value
+            .write()
+            .unwrap()
+            .current_animated_pattern_frame += shift_val;
+        self
+    }
+
+    pub fn get_current_animated_pattern_frame(&self) -> i64 {
+        self.new_value
+            .read()
+            .unwrap()
+            .current_animated_pattern_frame
     }
 
     pub fn set_style(&mut self, style: RendererObjectStyle) -> &mut Self {
@@ -268,6 +373,9 @@ impl RendererObject {
             animation: Vec::new(),
             changed_animation: false,
             current_animation_frame: 0,
+            animated_pattern: Vec::new(),
+            changed_animated_pattern: false,
+            current_animated_pattern_frame: 0,
             colors: Vec::new(),
             changed_colors: false,
             default_background_color: Colors::TRANSPARENT,

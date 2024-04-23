@@ -268,38 +268,7 @@ mod tests {
 
         let mut moon = RendererObject::new();
         moon.set_x(Dimension::Pixel(-2));
-        moon.set_animation(&mut vec![
-            "▗▟▀▔
-█▌
-▝▜▄▁",
-            "▗▟█▀
-██
-▝▜█▄",
-            "▗▟█▛
-███
-▝▜█▙",
-            "▗▟██▖
-████▌
-▝▜██▘",
-            "▗▟██▙▖
-██████
-▝▜██▛▘",
-            " ▗██▙▖
- ▐████
- ▝██▛▘",
-            "  ▜█▙▖
-   ███
-  ▟█▛▘",
-            "  ▀█▙▖
-    ██
-  ▄█▛▘",
-            "  ▔▀▙▖
-    ▐█
-  ▁▄▛▘",
-            "▗▞▔▔▚▖
-▌    ▐
-▝▚▁▁▞▘",
-        ]);
+        moon.set_animation_from_string(include_str!("test_assets/moon.txt"));
         moon.set_colors(vec![ColorArea::new(
             Colors::GOLDENROD.with_luminosity(0.8),
             ColorLayer::Foreground,
@@ -332,7 +301,7 @@ mod tests {
         title.set_children(vec![moon.clone()]);
 
         let mut root = RendererObject::new();
-        root.set_pattern(include_str!("test_assets/stars.txt"));
+        root.set_animated_pattern_from_string(include_str!("test_assets/stars.txt"));
         root.set_width(Dimension::VW(100.0));
         root.set_height(Dimension::VH(100.0));
         root.set_style({
@@ -424,12 +393,13 @@ mod tests {
                             max_frame_time = max_frame_time.max(frame_time);
                         }
                         frame_count += 1;
-                        moon.set_current_frame(frame_count % 200);
+                        moon.set_current_animation_frame(frame_count % 200);
                         boat_left.set_x(Dimension::PW(-(frame_count % 200) as f64 + 50.0));
                         boat_right.set_x(Dimension::PW((frame_count % 200) as f64 - 50.0));
                         waves.set_x(Dimension::PW(
                             ((200 - frame_count % 400) as f64).abs() / 2.0,
                         ));
+                        root.set_current_animated_pattern_frame(frame_count / 60);
                     }
                     time_step = Instant::now();
                     min_frames_per_fourth =
@@ -489,12 +459,13 @@ Maximum frame time: {:?}
 
             while start_time.elapsed() < Duration::from_secs(5) {
                 frame_count += 1;
-                moon.set_current_frame(frame_count % 200);
+                moon.set_current_animation_frame(frame_count % 200);
                 boat_left.set_x(Dimension::PW(-(frame_count % 200) as f64 + 50.0));
                 boat_right.set_x(Dimension::PW((frame_count % 200) as f64 - 50.0));
                 waves.set_x(Dimension::PW(
                     ((200 - frame_count % 400) as f64).abs() / 2.0,
                 ));
+                root.set_current_animated_pattern_frame(frame_count / 60);
 
                 thread::sleep(Duration::from_millis(8))
             }

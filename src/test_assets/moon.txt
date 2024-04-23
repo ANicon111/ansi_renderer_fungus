@@ -1,0 +1,39 @@
+▗▟▀▔
+█▌
+▝▜▄▁
+<FrameSeparator>
+▗▟█▀
+██
+▝▜█▄
+<FrameSeparator>
+▗▟█▛
+███
+▝▜█▙
+<FrameSeparator>
+▗▟██▖
+████▌
+▝▜██▘
+<FrameSeparator>
+▗▟██▙▖
+██████
+▝▜██▛▘
+<FrameSeparator>
+ ▗██▙▖
+ ▐████
+ ▝██▛▘
+<FrameSeparator>
+  ▜█▙▖
+   ███
+  ▟█▛▘
+<FrameSeparator>
+  ▀█▙▖
+    ██
+  ▄█▛▘
+<FrameSeparator>
+  ▔▀▙▖
+    ▐█
+  ▁▄▛▘
+<FrameSeparator>
+▗▞▔▔▚▖
+▌    ▐
+▝▚▁▁▞▘
