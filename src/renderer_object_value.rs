@@ -175,7 +175,7 @@ impl RendererObjectValue {
         }
 
         if update {
-            self.update();
+            self.update(); //TODO optimize updates (signaling)
             update_parent = true;
         }
         return update_parent;
@@ -495,9 +495,7 @@ impl RendererObjectValue {
     }
 
     fn draw_text(&mut self, renderer_padding: i64) {
-        let start_x: i64 = (-self.absolute_x - renderer_padding)
-            .min(self.calculated_width)
-            .max(0);
+        let start_x: i64 = (-self.absolute_x - renderer_padding).min(self.calculated_width);
         let end_x: i64 = (self.absolute_x + renderer_padding + self.renderer_width)
             .min(self.calculated_width)
             .max(0);
@@ -506,7 +504,7 @@ impl RendererObjectValue {
             .max(0);
         let end_y: i64 = (self.absolute_y + renderer_padding + self.renderer_height)
             .min(self.calculated_height)
-            .max(0);
+            .max(0); //TODO fix setting object position around the top or left of screen
 
         let text_height: usize = self.text.len();
         let alignment_offset_y: i64 = match self.style.internal_alignment_y {

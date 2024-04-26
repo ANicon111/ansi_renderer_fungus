@@ -18,7 +18,7 @@ impl Pixels {
     };
 }
 
-#[derive(PartialEq, Eq, Debug, Clone)]
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub struct Pixel {
     pub value: char,
     pub background: Color,

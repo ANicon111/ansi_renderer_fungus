@@ -354,6 +354,8 @@ mod tests {
         root.set_children(vec![boat_left.clone(), boat_right.clone(), waves.clone()]);
         root.add_child(title.clone());
 
+        renderer.disable_output = false;
+
         renderer.set_object(Some(root.clone()));
 
         {
@@ -377,7 +379,6 @@ mod tests {
 
             let mut time_step = Instant::now();
 
-            renderer.disable_output = false;
             for _second in 0..5 {
                 for _quarter_second in 0..4 {
                     while Instant::now().duration_since(time_step) < Duration::from_millis(250) {
@@ -454,10 +455,9 @@ Maximum frame time: {:?}
 
             let start_time = Instant::now();
 
-            renderer.disable_output = false;
             let running_renderer = renderer._debug_run();
 
-            while start_time.elapsed() < Duration::from_secs(5) {
+            while start_time.elapsed() < Duration::from_secs(50) {
                 frame_count += 1;
                 moon.set_current_animation_frame(frame_count % 200);
                 boat_left.set_x(Dimension::PW(-(frame_count % 200) as f64 + 50.0));
@@ -467,7 +467,7 @@ Maximum frame time: {:?}
                 ));
                 root.set_current_animated_pattern_frame(frame_count / 60);
 
-                thread::sleep(Duration::from_millis(8))
+                thread::sleep(Duration::from_millis(100))
             }
 
             let results = running_renderer._stop();
