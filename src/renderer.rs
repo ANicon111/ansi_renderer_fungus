@@ -73,7 +73,6 @@ impl Renderer {
         self.padding = buffer;
     }
 
-    ///returns the actual frame time
     pub fn draw(&mut self, force_update: bool) {
         if self.drawing {
             return;

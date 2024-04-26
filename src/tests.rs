@@ -219,6 +219,9 @@ mod tests {
         boat_left.set_style({
             let mut style = RendererObjectStyle::new();
             style.external_alignment_x = Some(AlignmentX::Right);
+            let mut border = Borders::ROUNDED;
+            border.set_background_all(Colors::BLACK.with_alpha(0.5));
+            style.border = border;
             style
         });
         boat_left.set_colors(vec![
@@ -260,7 +263,7 @@ mod tests {
 
         let mut waves = RendererObject::new();
         waves.set_pattern(" ▁▂▃▃▄▄▄▃▃▂▁        ▁▃▅▆▇▇▇▆▅▃▁     ▁▂▃▄▄▅▅▅▄▄▃▂▁       ");
-        waves.set_width(Dimension::PW(500.0));
+        waves.set_width(Dimension::PW(400.0));
         waves.set_height(Dimension::Pixel(1));
         waves.set_y(Dimension::Pixel(-3));
         waves.set_colors(vec![ColorArea::new(water_color, ColorLayer::Foreground)]);

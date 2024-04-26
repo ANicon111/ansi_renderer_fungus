@@ -495,16 +495,18 @@ impl RendererObjectValue {
     }
 
     fn draw_text(&mut self, renderer_padding: i64) {
-        let start_x: i64 = (-self.absolute_x - renderer_padding).min(self.calculated_width);
-        let end_x: i64 = (self.absolute_x + renderer_padding + self.renderer_width)
+        let start_x: i64 = (-self.absolute_x - renderer_padding)
             .min(self.calculated_width)
             .max(0);
         let start_y: i64 = (-self.absolute_y - renderer_padding)
             .min(self.calculated_height)
             .max(0);
+        let end_x: i64 = (self.absolute_x + renderer_padding + self.renderer_width)
+            .min(self.calculated_width)
+            .max(0);
         let end_y: i64 = (self.absolute_y + renderer_padding + self.renderer_height)
             .min(self.calculated_height)
-            .max(0); //TODO fix setting object position around the top or left of screen
+            .max(0);
 
         let text_height: usize = self.text.len();
         let alignment_offset_y: i64 = match self.style.internal_alignment_y {
@@ -538,11 +540,11 @@ impl RendererObjectValue {
         let start_x: i64 = (-self.absolute_x - renderer_padding)
             .min(self.calculated_width)
             .max(0);
-        let end_x: i64 = (-self.absolute_x + renderer_padding + self.renderer_width)
-            .min(self.calculated_width)
-            .max(0);
         let start_y: i64 = (-self.absolute_y - renderer_padding)
             .min(self.calculated_height)
+            .max(0);
+        let end_x: i64 = (-self.absolute_x + renderer_padding + self.renderer_width)
+            .min(self.calculated_width)
             .max(0);
         let end_y: i64 = (-self.absolute_y + renderer_padding + self.renderer_height)
             .min(self.calculated_height)
@@ -565,11 +567,11 @@ impl RendererObjectValue {
         let start_x: i64 = (-self.absolute_x - renderer_padding)
             .min(self.calculated_width)
             .max(0);
-        let end_x: i64 = (-self.absolute_x + renderer_padding + self.renderer_width)
-            .min(self.calculated_width)
-            .max(0);
         let start_y: i64 = (-self.absolute_y - renderer_padding)
             .min(self.calculated_height)
+            .max(0);
+        let end_x: i64 = (-self.absolute_x + renderer_padding + self.renderer_width)
+            .min(self.calculated_width)
             .max(0);
         let end_y: i64 = (-self.absolute_y + renderer_padding + self.renderer_height)
             .min(self.calculated_height)
@@ -610,11 +612,11 @@ impl RendererObjectValue {
         let start_x: i64 = (-self.absolute_x - renderer_padding)
             .min(self.calculated_width)
             .max(0);
-        let end_x: i64 = (-self.absolute_x + renderer_padding + self.renderer_width)
-            .min(self.calculated_width)
-            .max(0);
         let start_y: i64 = (-self.absolute_y - renderer_padding)
             .min(self.calculated_height)
+            .max(0);
+        let end_x: i64 = (-self.absolute_x + renderer_padding + self.renderer_width)
+            .min(self.calculated_width)
             .max(0);
         let end_y: i64 = (-self.absolute_y + renderer_padding + self.renderer_height)
             .min(self.calculated_height)
@@ -640,13 +642,15 @@ impl RendererObjectValue {
         let start_x: i64 = (-self.absolute_x - renderer_padding)
             .min(self.calculated_width)
             .max(0);
-        let end_x: i64 = (-self.absolute_x + renderer_padding + self.renderer_width)
+        let rendered_width: i64 = (-self.absolute_x + renderer_padding + self.renderer_width
+            - start_x)
             .min(self.calculated_width)
             .max(0);
         let start_y: i64 = (-self.absolute_y - renderer_padding)
             .min(self.calculated_height)
             .max(0);
-        let end_y: i64 = (-self.absolute_y + renderer_padding + self.renderer_height)
+        let rendered_height: i64 = (-self.absolute_y + renderer_padding + self.renderer_height
+            - start_y)
             .min(self.calculated_height)
             .max(0);
 
@@ -711,25 +715,25 @@ impl RendererObjectValue {
                 AlignmentY::Bottom => self.calculated_height - color_height as i64,
             };
 
-            let color_start_x = start_x.max(alignment_offset_x + color_x);
-            let color_end_x = end_x.min(alignment_offset_x + color_x + color_width);
-            let color_start_y = start_y.max(alignment_offset_y + color_y);
-            let color_end_y = end_y.min(alignment_offset_y + color_y + color_height);
+            let color_start_x = alignment_offset_x + color_x;
+            let color_start_y = alignment_offset_y + color_y;
+            let color_end_x = alignment_offset_x + color_x + color_width;
+            let color_end_y = alignment_offset_y + color_y + color_height;
 
-            for i in color_start_y..color_end_y {
-                for j in color_start_x..color_end_x {
+            for i in color_start_y.max(0)..color_end_y.min(rendered_height) {
+                for j in color_start_x.max(0)..color_end_x.min(rendered_width) {
                     match color_area.layer {
                         ColorLayer::Background => {
-                            self.buffer[(i - start_y) as usize][(j - start_x) as usize].background =
-                                self.buffer[(i - start_y) as usize][(j - start_x) as usize]
-                                    .background
-                                    .with_overlay(color_area.color)
+                            self.buffer[i as usize][j as usize].background = self.buffer[i as usize]
+                                [j as usize]
+                                .background
+                                .with_overlay(color_area.color)
                         }
                         ColorLayer::Foreground => {
-                            self.buffer[(i - start_y) as usize][(j - start_x) as usize].foreground =
-                                self.buffer[(i - start_y) as usize][(j - start_x) as usize]
-                                    .foreground
-                                    .with_overlay(color_area.color)
+                            self.buffer[i as usize][j as usize].foreground = self.buffer[i as usize]
+                                [j as usize]
+                                .foreground
+                                .with_overlay(color_area.color)
                         }
                     }
                 }
@@ -741,11 +745,11 @@ impl RendererObjectValue {
         let start_x: i64 = (-self.absolute_x - renderer_padding)
             .min(self.calculated_width)
             .max(0);
-        let end_x: i64 = (-self.absolute_x + renderer_padding + self.renderer_width)
-            .min(self.calculated_width)
-            .max(0);
         let start_y: i64 = (-self.absolute_y - renderer_padding)
             .min(self.calculated_height)
+            .max(0);
+        let end_x: i64 = (-self.absolute_x + renderer_padding + self.renderer_width)
+            .min(self.calculated_width)
             .max(0);
         let end_y: i64 = (-self.absolute_y + renderer_padding + self.renderer_height)
             .min(self.calculated_height)
@@ -798,26 +802,36 @@ impl RendererObjectValue {
                 renderer_padding,
             );
 
-            let child_start_x = start_x.max(alignment_offset_x + child_x);
-            let child_end_x = end_x.min(alignment_offset_x + child_x + child_width);
-            let child_start_y = start_y.max(alignment_offset_y + child_y);
-            let child_end_y = end_y.min(alignment_offset_y + child_y + child_height);
-            for i in child_start_y..child_end_y {
-                for j in child_start_x..child_end_x {
-                    self.buffer[(i - start_y) as usize][(j - start_x) as usize] =
-                        self.buffer[(i - start_y) as usize][(j - start_x) as usize].with_overlay(
-                            &child_buffer[(i - child_start_y) as usize]
-                                [(j - child_start_x) as usize],
-                        );
-                }
-            }
+            //I have no idea why this correction works, it's a total bodge, but it's perfect
+            let child_rendering_correction_x = child_width + renderer_padding * 2
+                - child_buffer.first().unwrap_or(&vec![]).len() as i64
+                - (child_width + child_x + alignment_offset_x - self.calculated_width)
+                    .clamp(0, (child_width - self.calculated_width).max(0));
+            let child_rendering_correction_y = child_height + renderer_padding * 2
+                - child_buffer.len() as i64
+                - (child_height + child_y + alignment_offset_y - self.calculated_height)
+                    .clamp(0, (child_height - self.calculated_height).max(0));
 
-            //draw border around object
             let child_top = alignment_offset_y + child_y;
             let child_bottom = alignment_offset_y + child_y + child_height - 1;
             let child_left = alignment_offset_x + child_x;
             let child_right = alignment_offset_x + child_x + child_width - 1;
 
+            for i in (child_top + child_rendering_correction_y).max(start_y)
+                ..=child_bottom.min(end_y - 1)
+            {
+                for j in (child_left + child_rendering_correction_x).max(start_x)
+                    ..=child_right.min(end_x - 1)
+                {
+                    self.buffer[(i - start_y) as usize][(j - start_x) as usize] =
+                        self.buffer[(i - start_y) as usize][(j - start_x) as usize].with_overlay(
+                            &child_buffer[(i - child_top - child_rendering_correction_y) as usize]
+                                [(j - child_left - child_rendering_correction_x) as usize],
+                        );
+                }
+            }
+
+            //draw border around object
             if child.style.border.top.value != '\0'
                 && child_top - 1 >= start_y
                 && child_top - 1 < end_y
