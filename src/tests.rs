@@ -462,6 +462,7 @@ Maximum frame time: {:?}
 
             while start_time.elapsed() < Duration::from_secs(5) {
                 frame_count += 1;
+                running_renderer._lock();
                 moon.set_current_animation_frame(frame_count % 200);
                 boat_left.set_x(Dimension::PW(-(frame_count % 200) as f64 + 50.0));
                 boat_right.set_x(Dimension::PW((frame_count % 200) as f64 - 50.0));
@@ -469,6 +470,7 @@ Maximum frame time: {:?}
                     ((200 - frame_count % 400) as f64).abs() / 2.0,
                 ));
                 root.set_current_animated_pattern_frame(frame_count / 60);
+                running_renderer._unlock();
 
                 thread::sleep(Duration::from_millis(8))
             }

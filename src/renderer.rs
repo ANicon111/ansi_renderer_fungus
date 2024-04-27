@@ -27,6 +27,7 @@ pub struct Renderer {
     object: Option<RendererObject>,
     console: BufferedConsole,
     drawing: bool,
+    lock: Arc<AtomicBool>,
 
     pub disable_output: bool,
 }
@@ -41,6 +42,7 @@ impl Renderer {
             padding: 5,
             console: BufferedConsole::new(),
             drawing: false,
+            lock: Arc::new(AtomicBool::new(false)),
             disable_output: false,
         }
     }
@@ -77,6 +79,9 @@ impl Renderer {
         if self.drawing {
             return;
         }
+        if self.lock.load(Ordering::Relaxed) {
+            return;
+        }
         self.drawing = true;
         if let Some(object_wrapper) = &mut self.object {
             {
@@ -101,7 +106,9 @@ impl Renderer {
                 }
                 let mut object = object_wrapper.value.write().unwrap();
 
-                object.update_value();
+                {
+                    object.update_value();
+                }
 
                 object.process_geometry(
                     self.width,
@@ -199,6 +206,7 @@ impl Renderer {
         let mut running_renderer = RunningRenderer {
             thread: None,
             running: running.clone(),
+            lock: self.lock.clone(),
         };
         running_renderer.thread = Some(thread::spawn(move || {
             let mut renderer = self;
@@ -225,6 +233,7 @@ impl Renderer {
         let mut running_renderer = _RunningRendererDebug {
             thread: None,
             running: running.clone(),
+            lock: self.lock.clone(),
         };
         running_renderer.thread = Some(thread::spawn(move || {
             let mut renderer = self;
@@ -296,9 +305,18 @@ impl Renderer {
 pub struct RunningRenderer {
     thread: Option<JoinHandle<Renderer>>,
     running: Arc<AtomicBool>,
+    lock: Arc<AtomicBool>,
 }
 
 impl RunningRenderer {
+    pub fn lock(&self) {
+        self.lock.store(true, Ordering::Relaxed);
+    }
+
+    pub fn unlock(&self) {
+        self.lock.store(false, Ordering::Relaxed);
+    }
+
     pub fn stop(self) -> Renderer {
         self.running.store(false, Ordering::Relaxed);
         self.thread.unwrap().join().unwrap()
@@ -319,9 +337,18 @@ pub(crate) struct _RunningRendererDebugValues {
 pub(crate) struct _RunningRendererDebug {
     thread: Option<JoinHandle<_RunningRendererDebugValues>>,
     running: Arc<AtomicBool>,
+    lock: Arc<AtomicBool>,
 }
 
 impl _RunningRendererDebug {
+    pub(crate) fn _lock(&self) {
+        self.lock.store(true, Ordering::Relaxed);
+    }
+
+    pub(crate) fn _unlock(&self) {
+        self.lock.store(false, Ordering::Relaxed);
+    }
+
     pub(crate) fn _stop(self) -> _RunningRendererDebugValues {
         self.running.store(false, Ordering::Relaxed);
         self.thread.unwrap().join().unwrap()
