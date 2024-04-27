@@ -460,7 +460,7 @@ Maximum frame time: {:?}
 
             let running_renderer = renderer._debug_run();
 
-            while start_time.elapsed() < Duration::from_secs(50) {
+            while start_time.elapsed() < Duration::from_secs(5) {
                 frame_count += 1;
                 moon.set_current_animation_frame(frame_count % 200);
                 boat_left.set_x(Dimension::PW(-(frame_count % 200) as f64 + 50.0));
@@ -470,7 +470,7 @@ Maximum frame time: {:?}
                 ));
                 root.set_current_animated_pattern_frame(frame_count / 60);
 
-                thread::sleep(Duration::from_millis(100))
+                thread::sleep(Duration::from_millis(8))
             }
 
             let results = running_renderer._stop();

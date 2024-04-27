@@ -1,5 +1,5 @@
 use std::{
-    sync::{Arc, RwLock, Weak},
+    sync::{Arc, RwLock},
     vec,
 };
 
@@ -11,6 +11,34 @@ use crate::{
     pixel::Pixel,
     renderer_object_style::{AlignmentX, AlignmentY, RendererObjectStyle},
 };
+
+#[derive(Clone)]
+pub(crate) struct UpdateValueSignaler {
+    pub(crate) update: bool,
+    pub(crate) parent: Option<Arc<RwLock<UpdateValueSignaler>>>,
+}
+
+impl UpdateValueSignaler {
+    pub(crate) fn update(&mut self) {
+        if !self.update {
+            self.update = true;
+            self.update_parent();
+        }
+    }
+
+    fn update_parent(&mut self) {
+        if let Some(parent) = self.parent.clone() {
+            parent.write().unwrap().update();
+        }
+    }
+
+    pub(crate) fn new() -> UpdateValueSignaler {
+        UpdateValueSignaler {
+            update: false,
+            parent: None,
+        }
+    }
+}
 
 #[derive(Clone)]
 pub(crate) struct RendererObjectValue {
@@ -35,6 +63,7 @@ pub(crate) struct RendererObjectValue {
 
     pub(crate) update_size: bool,
     pub(crate) update_content: bool,
+    pub(crate) update_value_signal: Arc<RwLock<UpdateValueSignaler>>,
 
     pub(crate) default_character: char,
 
@@ -63,7 +92,6 @@ pub(crate) struct RendererObjectValue {
     pub(crate) style: RendererObjectStyle,
     pub(crate) changed_style: bool,
 
-    pub(crate) parent: Option<Weak<RwLock<RendererObjectValue>>>,
     pub(crate) parent_location: usize,
 
     pub(crate) new_self: Option<Arc<RwLock<RendererObjectValue>>>,
@@ -72,13 +100,17 @@ pub(crate) struct RendererObjectValue {
 impl RendererObjectValue {
     ///returns update_parent
     pub(crate) fn update_value(&mut self) -> bool {
+        {
+            if !self.update_value_signal.read().unwrap().update {
+                return false;
+            }
+        }
         let mut update = false;
         let mut update_parent = false;
         {
             let binding = self.new_self.clone().unwrap();
             let mut new_self = binding.write().unwrap();
 
-            self.parent = new_self.parent.clone();
             self.parent_location = new_self.parent_location;
 
             if self.x != new_self.x {
@@ -170,14 +202,15 @@ impl RendererObjectValue {
         }
 
         for i in 0..self.children.len() {
-            let mut child = self.children[i].try_write().unwrap();
+            let mut child = self.children[i].write().unwrap();
             update = child.update_value() || update;
         }
 
         if update {
-            self.update(); //TODO optimize updates (signaling)
+            self.update();
             update_parent = true;
         }
+        self.update_value_signal.write().unwrap().update = false;
         return update_parent;
     }
 
@@ -380,7 +413,7 @@ impl RendererObjectValue {
         //update children independent on current object
         if self.update_content {
             for child_cell in &self.children {
-                let mut child = child_cell.try_write().unwrap();
+                let mut child = child_cell.write().unwrap();
                 match (child.width, child.height) {
                     //evil match that selects children with parent-dependent values
                     (
@@ -464,7 +497,7 @@ impl RendererObjectValue {
         //update children dependent on current object
         if self.update_content {
             for child_cell in &self.children {
-                let mut child = child_cell.try_write().unwrap();
+                let mut child = child_cell.write().unwrap();
                 match (child.width, child.height) {
                     (
                         Dimension::Percent(_)
@@ -756,7 +789,7 @@ impl RendererObjectValue {
             .max(0);
 
         for child_cell in &self.children {
-            let mut child = child_cell.try_write().unwrap();
+            let mut child = child_cell.write().unwrap();
             let child_x = generic_dimension_calc(
                 &child.x,
                 self.calculated_width,

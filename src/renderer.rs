@@ -99,7 +99,7 @@ impl Renderer {
                         self.height as usize,
                     );
                 }
-                let mut object = object_wrapper.value.try_write().unwrap();
+                let mut object = object_wrapper.value.write().unwrap();
 
                 object.update_value();
 
