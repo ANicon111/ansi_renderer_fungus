@@ -510,26 +510,29 @@ impl RendererObject {
         self
     }
 
-    pub fn set_children(&mut self, children: Vec<RendererObject>) {
-        self.value
-            .read()
-            .unwrap()
-            .update_value_signal
-            .write()
-            .unwrap()
-            .update();
-        let mut current_value = self.new_value.write().unwrap();
-        for i in 0..children.len() {
-            {
-                let rw_lock = &children[i].new_value;
-                let mut child = rw_lock.write().unwrap();
-                child.parent_location = i;
-                child.update_value_signal.write().unwrap().parent =
-                    Some(current_value.update_value_signal.clone());
+    pub fn set_children(&mut self, children: Vec<RendererObject>) -> &mut Self {
+        {
+            self.value
+                .read()
+                .unwrap()
+                .update_value_signal
+                .write()
+                .unwrap()
+                .update();
+            let mut current_value = self.new_value.write().unwrap();
+            for i in 0..children.len() {
+                {
+                    let rw_lock = &children[i].new_value;
+                    let mut child = rw_lock.write().unwrap();
+                    child.parent_location = i;
+                    child.update_value_signal.write().unwrap().parent =
+                        Some(current_value.update_value_signal.clone());
+                }
+                current_value.children.push(children[i].value.clone());
             }
-            current_value.children.push(children[i].value.clone());
+            current_value.changed_children = true;
         }
-        current_value.changed_children = true;
+        self
     }
 
     pub fn get_children(&self) -> Vec<RendererObject> {
@@ -552,26 +555,29 @@ impl RendererObject {
             .collect()
     }
 
-    pub fn add_child(&mut self, child: RendererObject) {
-        self.value
-            .read()
-            .unwrap()
-            .update_value_signal
-            .write()
-            .unwrap()
-            .update();
-        let mut current_value = self.new_value.write().unwrap();
+    pub fn add_child(&mut self, child: RendererObject) -> &mut RendererObject {
         {
-            let mut child_value = child.value.write().unwrap();
-            child_value.update_value_signal.write().unwrap().parent =
-                Some(current_value.update_value_signal.clone());
-            child_value.parent_location = current_value.children.len();
+            self.value
+                .read()
+                .unwrap()
+                .update_value_signal
+                .write()
+                .unwrap()
+                .update();
+            let mut current_value = self.new_value.write().unwrap();
+            {
+                let mut child_value = child.value.write().unwrap();
+                child_value.update_value_signal.write().unwrap().parent =
+                    Some(current_value.update_value_signal.clone());
+                child_value.parent_location = current_value.children.len();
+            }
+            current_value.children.push(child.value);
+            current_value.changed_children = true;
         }
-        current_value.children.push(child.value);
-        current_value.changed_children = true;
+        self
     }
 
-    pub fn remove_child(&mut self, renderer_object: &RendererObject) {
+    pub fn remove_child(&mut self, renderer_object: &RendererObject) -> &mut RendererObject {
         self.value
             .read()
             .unwrap()
@@ -580,25 +586,29 @@ impl RendererObject {
             .unwrap()
             .update();
         self.remove_child_at(renderer_object.value.read().unwrap().parent_location);
+        self
     }
 
-    pub fn remove_child_at(&mut self, index: usize) {
-        self.value
-            .read()
-            .unwrap()
-            .update_value_signal
-            .write()
-            .unwrap()
-            .update();
-        let mut val = self.new_value.write().unwrap();
-        val.children.remove(index);
+    pub fn remove_child_at(&mut self, index: usize) -> &mut RendererObject {
+        {
+            self.value
+                .read()
+                .unwrap()
+                .update_value_signal
+                .write()
+                .unwrap()
+                .update();
+            let mut val = self.new_value.write().unwrap();
+            val.children.remove(index);
 
-        let children = val.children.clone();
-        for i in 0..children.len() {
-            children[i].write().unwrap().parent_location = i;
+            let children = val.children.clone();
+            for i in 0..children.len() {
+                children[i].write().unwrap().parent_location = i;
+            }
+
+            val.changed_children = true;
         }
-
-        val.changed_children = true;
+        self
     }
     //end of getters/setters
 
